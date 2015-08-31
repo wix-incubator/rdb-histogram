@@ -59,24 +59,24 @@ describe("histogram of spiky distribution 92% at 90-110, 6% at 900-1100, 1.5% at
     expect(histogram.toJSON().max).to.be.within(3500, 4500);
   });
 
-  it("should compute p50 to be within 90..128", function () {
-    expect(histogram.toJSON().p50).to.be.within(90, 128);
+  it("should compute p50 to be within 90..110", function () {
+    expect(histogram.toJSON().p50).to.be.within(90, 110);
   });
 
-  it("should compute p75 to be within 90..128", function () {
-    expect(histogram.toJSON().p75).to.be.within(90, 128);
+  it("should compute p75 to be within 90..110", function () {
+    expect(histogram.toJSON().p75).to.be.within(90, 110);
   });
 
-  it("should compute p95 to be within 724..1024", function () {
-    expect(histogram.toJSON().p95).to.be.within(724, 1024);
+  it("should compute p95 to be within 900..1100", function () {
+    expect(histogram.toJSON().p95).to.be.within(900, 1100);
   });
 
-  it("should compute p99 to be within 1448..2048", function () {
-    expect(histogram.toJSON().p99).to.be.within(1448, 2048);
+  it("should compute p99 to be within 1900..2100", function () {
+    expect(histogram.toJSON().p99).to.be.within(1900, 2100);
   });
 
-  it("should compute p999 to be within 2896..4096", function () {
-    expect(histogram.toJSON().p999).to.be.within(2896, 4096);
+  it("should compute p999 to be within 3500..4500", function () {
+    expect(histogram.toJSON().p999).to.be.within(3500, 4500);
   });
 });
 

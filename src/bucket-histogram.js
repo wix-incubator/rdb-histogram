@@ -20,7 +20,10 @@ BucketHistogram.prototype.update = function (value) {
   else {
     bucket = Math.floor(this.normalizedLog(value) - this.normalizedLog(this.minBucket) + 1);
   }
-  this.values[bucket] = this.values[bucket] + 1 || 1;
+  this.values[bucket] = this.values[bucket] || {count: 0};
+  this.values[bucket].count += 1;
+  this.values[bucket].min = this.defValue(Math.min(this.values[bucket].min, value), value);
+  this.values[bucket].max = this.defValue(Math.max(this.values[bucket].max, value), value);
   this.min = this.defValue(Math.min(this.min, value), value);
   this.max = this.defValue(Math.max(this.max, value), value);
   this.count = (this.count + 1) || 1;
@@ -46,26 +49,28 @@ BucketHistogram.prototype.toJSON = function() {
   }
 };
 
-BucketHistogram.prototype.percentile = function(percentile, values) {
-  var total = values.reduce(function(a,b) {return a+b;});
+BucketHistogram.prototype.percentile = function(percentile, buckets) {
+  var total = buckets.map(function(bc) {
+    return bc.count || 0;
+  }).reduce(function(a,b) {
+    return a+b;
+  });
   var currSum = 0;
   var prevSum = 0;
   var pos = 0;
 
   while (currSum/total < percentile) {
     prevSum = currSum;
-    currSum += (values[pos] || 0);
+    if (buckets[pos])
+      currSum += buckets[pos].count;
     pos++;
   }
 
-  var cellValue = values[pos-1];
-  var cellHigh = Math.pow(this.backetSize, pos-1);
-  var cellLow = Math.pow(this.backetSize, pos-2);
-  if (pos === values.length)
-    cellHigh = this.max;
-  if (pos === 1)
-    cellLow = this.min;
-  var percentOfCell = (total * percentile - prevSum) / cellValue;
+  var bucket = buckets[pos-1];
+  var value = bucket.count;
+  var cellHigh = bucket.max;
+  var cellLow = bucket.min;
+  var percentOfCell = (total * percentile - prevSum) / value;
   return percentOfCell * (cellHigh-cellLow) + cellLow;
 };
 
