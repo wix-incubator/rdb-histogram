@@ -6,7 +6,9 @@ function BucketHistogram(properties) {
   this.backetSize = properties.backetSize || Math.sqrt(2);
   this.norm = Math.log(this.backetSize);
   this.values = [];
-
+  this.min = NaN;
+  this.max = NaN;
+  this.count = 0;
 }
 
 BucketHistogram.prototype.normalizedLog = function(value) {
@@ -22,31 +24,58 @@ BucketHistogram.prototype.update = function (value) {
   }
   this.values[bucket] = this.values[bucket] || {count: 0};
   this.values[bucket].count += 1;
-  this.values[bucket].min = this.defValue(Math.min(this.values[bucket].min, value), value);
-  this.values[bucket].max = this.defValue(Math.max(this.values[bucket].max, value), value);
-  this.min = this.defValue(Math.min(this.min, value), value);
-  this.max = this.defValue(Math.max(this.max, value), value);
+  this.values[bucket].min = safeMin(this.values[bucket].min, value);
+  this.values[bucket].max = safeMax(this.values[bucket].max, value);
+  this.min = safeMin(this.min, value);
+  this.max = safeMax(this.max, value);
   this.count = (this.count + 1) || 1;
 };
 
-BucketHistogram.prototype.defValue = function(value, defValue) {
-  if (value === undefined || isNaN(value))
-    return defValue;
-  else
-    return value;
+BucketHistogram.prototype.add = function(other) {
+  var i;
+  var length = Math.max(this.values.length, other.values.length);
+
+  this.min = safeMin(this.min, other.min);
+  this.max = safeMax(this.max, other.max);
+  this.count = this.count + other.count;
+
+  for (i=0; i < length; i++) {
+    if (this.values[i] && other.values[i]) {
+      var thisBucket = this.values[i];
+      var otherBucket = other.values[i];
+      this.values[i] = {
+        count: thisBucket.count + otherBucket.count,
+        min: safeMin(thisBucket.min, otherBucket.min),
+        max: safeMax(thisBucket.max, otherBucket.max)
+      }
+    }
+    else if (other.values[i]) {
+      var bucket = other.values[i];
+      this.values[i] = {
+        count: bucket.count,
+        min: bucket.min,
+        max: bucket.max
+      }
+    }
+  }
 };
 
 BucketHistogram.prototype.toJSON = function() {
-  return {
-    min: this.min,
-    max: this.max,
-    count: this.count,
-    p50: this.percentile(0.5, this.values),
-    p75: this.percentile(0.75, this.values),
-    p95: this.percentile(0.95, this.values),
-    p99: this.percentile(0.99, this.values),
-    p999: this.percentile(0.999, this.values)
-  }
+  if (this.values.length === 0)
+    return {
+      count: 0
+    };
+  else
+    return {
+      min: this.min,
+      max: this.max,
+      count: this.count,
+      p50: this.percentile(0.5, this.values),
+      p75: this.percentile(0.75, this.values),
+      p95: this.percentile(0.95, this.values),
+      p99: this.percentile(0.99, this.values),
+      p999: this.percentile(0.999, this.values)
+    }
 };
 
 BucketHistogram.prototype.percentile = function(percentile, buckets) {
@@ -75,3 +104,20 @@ BucketHistogram.prototype.percentile = function(percentile, buckets) {
 };
 
 module.exports = BucketHistogram;
+
+function safeNumOp(fn, a, b) {
+  if (isNaN(a))
+    return b;
+  else if (isNaN(b))
+    return a;
+  else
+    return fn(a,b);
+}
+
+function safeMax(a,b) {
+  return safeNumOp(Math.max, a, b);
+}
+
+function safeMin(a,b) {
+  return safeNumOp(Math.min, a, b);
+}
