@@ -70,7 +70,7 @@ BucketHistogram.prototype.toJSON = function() {
       min: this.min,
       max: this.max,
       count: this.count,
-      p50: this.percentile(0.5, this.values),
+      median: this.percentile(0.5, this.values),
       p75: this.percentile(0.75, this.values),
       p95: this.percentile(0.95, this.values),
       p99: this.percentile(0.99, this.values),

@@ -18,7 +18,7 @@ describe("rolling histogram", function () {
     expect(stats.count).to.be.equal(101);
     expect(stats.min).to.be.equal(0);
     expect(stats.max).to.be.equal(100);
-    expect(stats.p50).to.be.within(49, 51);
+    expect(stats.median).to.be.within(49, 51);
     expect(stats.p75).to.be.within(74, 76);
     expect(stats.p95).to.be.within(94, 96);
     expect(stats.p99).to.be.within(98, 100);
@@ -37,7 +37,7 @@ describe("rolling histogram", function () {
     expect(stats.count).to.be.equal(101);
     expect(stats.min).to.be.equal(0);
     expect(stats.max).to.be.equal(100);
-    expect(stats.p50).to.be.within(49, 51);
+    expect(stats.median).to.be.within(49, 51);
     expect(stats.p75).to.be.within(74, 76);
     expect(stats.p95).to.be.within(94, 96);
     expect(stats.p99).to.be.within(98, 100);
@@ -65,7 +65,7 @@ describe("rolling histogram", function () {
     expect(stats.count).to.be.equal(100);
     expect(stats.min).to.be.equal(0);
     expect(stats.max).to.be.equal(99);
-    expect(stats.p50).to.be.within(49, 51);
+    expect(stats.median).to.be.within(49, 51);
     expect(stats.p75).to.be.within(74, 76);
     expect(stats.p95).to.be.within(94, 96);
     expect(stats.p99).to.be.within(98, 99);
@@ -84,7 +84,7 @@ describe("rolling histogram", function () {
     expect(stats.count).to.be.equal(0);
     expect(stats.min).to.be.undefined;
     expect(stats.max).to.be.undefined;
-    expect(stats.p50).to.be.undefined;
+    expect(stats.median).to.be.undefined;
     expect(stats.p75).to.be.undefined;
     expect(stats.p95).to.be.undefined;
     expect(stats.p99).to.be.undefined;

@@ -18,8 +18,8 @@ describe("histogram with uniform distribution 0..100", function () {
     expect(histogram.toJSON().max).to.be.equal(100);
   });
 
-  it("should compute p50 to be within 49..51", function () {
-    expect(histogram.toJSON().p50).to.be.within(49, 51);
+  it("should compute median to be within 49..51", function () {
+    expect(histogram.toJSON().median).to.be.within(49, 51);
   });
 
   it("should compute p75 to be within 74..76", function () {
@@ -62,8 +62,8 @@ describe("histogram of spiky distribution 92% at 90-110, 6% at 900-1100, 1.5% at
     expect(histogram.toJSON().max).to.be.within(3500, 4500);
   });
 
-  it("should compute p50 to be within 90..110", function () {
-    expect(histogram.toJSON().p50).to.be.within(90, 110);
+  it("should compute median to be within 90..110", function () {
+    expect(histogram.toJSON().median).to.be.within(90, 110);
   });
 
   it("should compute p75 to be within 90..110", function () {
@@ -96,7 +96,7 @@ describe("histogram minimal number of events", function () {
     expect(histogram.toJSON().count).to.be.equal(1);
     expect(histogram.toJSON().max).to.be.equal(10);
     expect(histogram.toJSON().min).to.be.equal(10);
-    expect(histogram.toJSON().p50).to.be.equal(10);
+    expect(histogram.toJSON().median).to.be.equal(10);
     expect(histogram.toJSON().p75).to.be.equal(10);
     expect(histogram.toJSON().p95).to.be.equal(10);
     expect(histogram.toJSON().p99).to.be.equal(10);
@@ -107,21 +107,21 @@ describe("histogram minimal number of events", function () {
 
 describe("histogram add", function () {
 
-  it("should add two empty histograms as empty", function () {
+  it("adding two empty histograms should return an empty histogram", function () {
     var h1 = new Histogram();
     var h2 = new Histogram();
     h1.add(h2);
     expect(h1.toJSON().count).to.be.equal(0);
     expect(h1.toJSON().min).to.be.undefined;
     expect(h1.toJSON().max).to.be.undefined;
-    expect(h1.toJSON().p50).to.be.undefined;
+    expect(h1.toJSON().median).to.be.undefined;
     expect(h1.toJSON().p75).to.be.undefined;
     expect(h1.toJSON().p95).to.be.undefined;
     expect(h1.toJSON().p99).to.be.undefined;
     expect(h1.toJSON().p999).to.be.undefined;
   });
 
-  it("adding empty histogram to filled one should return the same histogram", function () {
+  it("adding empty histogram to filled one should produce an histogram equivalent to the filled one", function () {
     var h1 = new Histogram();
     var h2 = new Histogram();
 
@@ -135,14 +135,14 @@ describe("histogram add", function () {
     expect(json1.count).to.be.equal(json2.count);
     expect(json1.min).to.be.equal(json2.min);
     expect(json1.max).to.be.equal(json2.max);
-    expect(json1.p50).to.be.equal(json2.p50);
+    expect(json1.median).to.be.equal(json2.median);
     expect(json1.p75).to.be.equal(json2.p75);
     expect(json1.p95).to.be.equal(json2.p95);
     expect(json1.p99).to.be.equal(json2.p99);
     expect(json1.p999).to.be.equal(json2.p999);
   });
 
-  it("adding filled histogram to an empty one should return the same histogram", function () {
+  it("adding filled histogram to an empty one should produce an histogram equivalent to the filled one", function () {
     var h1 = new Histogram();
     var h2 = new Histogram();
 
@@ -157,7 +157,7 @@ describe("histogram add", function () {
     expect(json1.count).to.be.equal(json2.count);
     expect(json1.min).to.be.equal(json2.min);
     expect(json1.max).to.be.equal(json2.max);
-    expect(json1.p50).to.be.equal(json2.p50);
+    expect(json1.median).to.be.equal(json2.median);
     expect(json1.p75).to.be.equal(json2.p75);
     expect(json1.p95).to.be.equal(json2.p95);
     expect(json1.p99).to.be.equal(json2.p99);
@@ -182,7 +182,7 @@ describe("histogram add", function () {
     expect(json3.count).to.be.equal(json1.count + json2.count);
     expect(json3.min).to.be.equal(Math.min(json1.min, json2.min));
     expect(json3.max).to.be.equal(Math.max(json1.max, json2.max));
-    expect(json3.p50).to.be.within(99,101);
+    expect(json3.median).to.be.within(99,101);
     expect(json3.p75).to.be.within(149,151);
     expect(json3.p95).to.be.within(189,191);
     expect(json3.p99).to.be.within(197,199);
