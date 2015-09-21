@@ -38,6 +38,7 @@ BucketHistogram.prototype.add = function(other) {
   this.min = safeMin(this.min, other.min);
   this.max = safeMax(this.max, other.max);
   this.count = this.count + other.count;
+  this.numBuckets = safeMax(this.numBuckets, other.numBuckets);
 
   for (i=0; i < length; i++) {
     if (this.values[i] && other.values[i]) {
@@ -74,7 +75,8 @@ BucketHistogram.prototype.toJSON = function() {
       p75: this.percentile(0.75, this.values),
       p95: this.percentile(0.95, this.values),
       p99: this.percentile(0.99, this.values),
-      p999: this.percentile(0.999, this.values)
+      p999: this.percentile(0.999, this.values),
+      numBuckets: this.values.length
     }
 };
 
