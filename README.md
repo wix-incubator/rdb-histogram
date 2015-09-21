@@ -1,30 +1,29 @@
 # node-measured-ex
 
-[Node measured]() is a port of the java [metrics]() library. Both implementations (the javascript and java) support an
- histogram metric that is sampling values to produce the histogram. However, in both implementations, the sampling
- histogram has issues with high percentile values lingering higher then they should for a period of time (see explanation
- below).
+[Node measured](https://github.com/felixge/node-measured) is a port of the java [metrics](https://github.com/dropwizard/metrics) library.
+Both implementations (the javascript and java) support an histogram metric aggregate. In fact,  both implementation use
+ the same algorithm - sampling Exponentially Decaying Sampling using
+[forward-decaying priority reservoir](http://dimacs.rutgers.edu/~graham/pubs/papers/fwddecay.pdf) with an exponential
+weighting towards newer data.
 
-Node-measured-ex introduces a new implementation of an histogram that instead of doing sampling, calculates histogram based
-on buckets of values with a rolling behaviour which produces an approximate histogram that has a better time-based
-behaviour.
+However, the algorithm in use has a not so nice side-effect - when calculating percentiles over the samples, the high
+percentiles (95%, 99% and 99.9%) tend to stay high for a long period of time after the sampled distribution has changed.
+By long time we mean 5 minutes and sometimes even considerably longer then that.
 
-In essence, we trade value accuracy with time based accuracy.
+The Rolling Bucket Histogram is an alternative algorithm for computing histogram values based on buckets of values with
+ exponential size based on a power (such as √2~1.41 or √√√2~1.09). The algorithm counts the number of events in each bucket
+ and uses this count to estimate which percentiles falls into which bucket, then computes the approximate percentile value
+ based on the bucket bounds. To achieve time-based histogram we use 5 histograms, one for each 15 seconds, and sum up the
+ 5 when asked for a last-minute histogram values (we use the fact that counts in buckets are additive).
 
-The metrics Histogram is ensured to produce a real sample value for a percentile. It does not ensure that that value is
-the actually that percentile, only that it is probably close to the percentile. It also does not ensure when high percentiles
-are reverted to smaller values - it only ensures that the decay is about 5 minutes.
+The end result is a more accurate and predictable histogram over the time dimension with tunable accuracy over the value
+dimension.
 
-The Rolling Bucket Histogram ensures accurate time based values - it decays within 1:00 - 1:15 minutes from high percentile
-values. However, it approximates percentile values, an approximation that has variance as large as the ```bucketSize``` parameter.
-When the ```bucketSize``` is set to 1.4, the variance can be up to 40% (but in practice it is lower).
+## Comparing node-measured (Metrics) Histogram algorithm with node-bucket-histogram algorithm
 
-## comparing node-measured (Metrics) Histogram with node-measured-ex Histogram
-
-In order to compare the histograms we run a 1 hour long model with 4 different distributions, each running for 15 minutes.
+In order to compare the histograms we run a 1 hour model with 4 different distributions, each running for 15 minutes.
 We then compare graph and summarize the different histograms and check how accurate the histograms are at representing
-our model. Our model does not use normalized distribution intentionally in order to simulate performance distributions
-which tend to not be normally distributed.
+our model.
 
 The following model is used:
 
