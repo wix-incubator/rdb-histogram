@@ -1,7 +1,7 @@
 {
-  "name": "measured-ex",
+  "name": "bucket-histogram",
   "version": "1.0.0",
-  "description": "Extra metrics for node-measured",
+  "description": "Alternative histogram model, based on buckets, for the measured metrics port",
   "main": "measured-ex.js",
   "scripts": {
     "lint": "jshint test/ ",
@@ -14,15 +14,8 @@
     "node-measured",
     "wix"
   ],
-  "publishConfig": {
-    "registry": "http://repo.dev.wix/artifactory/api/npm/npm-local/"
-  },
   "author": "Yoav Abrahami <yoav@wix.com>",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/wix/server-platform-js/issues"
-  },
-  "homepage": "https://github.com/wix/server-platform-js",
   "devDependencies": {
     "chai": "^3.2.0",
     "jshint": "^2.8.0",

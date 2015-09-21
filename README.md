@@ -51,7 +51,7 @@ This model has the following percentile values
 
 The results of running the metrics histogram are shown below
 
-![Graph of the Metrics histogram](raw/master/metrics-histogram.png "Metrics Histogram")
+![Graph of the Metrics histogram](metrics-histogram.png?raw=true "Metrics Histogram")
 
 And the values are
 
@@ -68,7 +68,7 @@ And the values are
 
 The results of running the rolling bucket histogram with bucket-size (ß) = 1.41 are shown below
 
-![Graph of the Rolling Bucket histogram with ß = 1.41](raw/master/rolling-bucket-histogram-1.41.png "Rolling Bucket Histogram 1.41")
+![Graph of the Rolling Bucket histogram with ß = 1.41](rolling-bucket-histogram-1.41.png?raw=true "Rolling Bucket Histogram 1.41")
 
 And the values are
 
