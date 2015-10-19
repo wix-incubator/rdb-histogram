@@ -57,34 +57,114 @@ BucketHistogram.prototype.update = function (value) {
 };
 
 BucketHistogram.prototype.add = function(other) {
-  var i;
+
+  if (this.mainScale !== other.mainScale || this.subScale !== other.subScale || this.minBucket !== other.minBucket)
+    throw new Error("Histogram.add: incompatible histogram configs");
+
+  var result = new BucketHistogram({
+    minBucket: this.minBucket,
+    mainScale: this.mainScale,
+    subScale: this.subScale
+  });
+
+  var i, thisBucket, otherBucket, newBucket;
   var length = Math.max(this.buckets.length, other.buckets.length);
 
-  this.min = safeMin(this.min, other.min);
-  this.max = safeMax(this.max, other.max);
-  this.count = this.count + other.count;
-  this.numBuckets = safeMax(this.numBuckets, other.numBuckets);
+  result.min = safeMin(this.min, other.min);
+  result.max = safeMax(this.max, other.max);
+  result.count = this.count + other.count;
 
   for (i=0; i < length; i++) {
     if (this.buckets[i] && other.buckets[i]) {
-      var thisBucket = this.buckets[i];
-      var otherBucket = other.buckets[i];
-      this.buckets[i] = {
-        count: thisBucket.count + otherBucket.count,
-        min: safeMin(thisBucket.min, otherBucket.min),
-        max: safeMax(thisBucket.max, otherBucket.max)
-      }
+      thisBucket = this.buckets[i];
+      otherBucket = other.buckets[i];
+      newBucket = setBucket(result.buckets, i, thisBucket.count + otherBucket.count, safeMin(thisBucket.min, otherBucket.min), safeMax(thisBucket.max, otherBucket.max));
+      if (thisBucket.subBuckets && otherBucket.subBuckets)
+        mergeSubBuckets(thisBucket, otherBucket, newBucket);
+      else if (thisBucket.subBuckets)
+        mergeSubBucketsAndBucket(thisBucket, otherBucket.count, newBucket);
+      else if (otherBucket.subBuckets)
+        mergeSubBucketsAndBucket(otherBucket, thisBucket.count, newBucket);
     }
     else if (other.buckets[i]) {
-      var bucket = other.buckets[i];
-      this.buckets[i] = {
-        count: bucket.count,
-        min: bucket.min,
-        max: bucket.max
+      otherBucket = other.buckets[i];
+      newBucket = setBucket(result.buckets, i, otherBucket.count, otherBucket.min, otherBucket.max);
+      if (otherBucket.subBuckets)
+        copySubBuckets(otherBucket, newBucket);
+    }
+    else if (this.buckets[i]) {
+      thisBucket = this.buckets[i];
+      newBucket = setBucket(result.buckets, i, thisBucket.count, thisBucket.min, thisBucket.max);
+      if (thisBucket.subBuckets)
+        copySubBuckets(thisBucket, newBucket);
+    }
+  }
+
+  return result;
+};
+
+function setBucket(buckets, pos, count, min, max) {
+  var bucket = {
+    count: count,
+    max: max,
+    min: min
+  };
+  buckets[pos] = bucket;
+  return bucket;
+}
+
+function copySubBuckets(sourceBucket, newBucket) {
+  var subBuckets = newBucket.subBuckets = [];
+  for (var i=0; i < sourceBucket.subBuckets.length; i++) {
+    if (sourceBucket.subBuckets[i]) {
+      setBucket(subBuckets, i, sourceBucket.subBuckets[i].count, sourceBucket.subBuckets[i].min, sourceBucket.subBuckets[i].max);
+    }
+  }
+}
+
+function mergeSubBucketsAndBucket(sourceBucket, otherCount, newBucket) {
+  copySubBuckets(sourceBucket, newBucket);
+  var subBuckets = newBucket.subBuckets;
+  var ratio = 1.0 + otherCount/sourceBucket.count;
+  // distribute count by a factor
+  subBuckets.forEach(function(sub) {
+    sub.count = Math.floor(sub.count * ratio);
+  });
+  // get the remaining count
+  var reminder = sourceBucket.count + otherCount - subBuckets.reduce(function(sum, subBucket) {
+    return sum + subBucket.count;
+  }, 0);
+  while (reminder > 0) {
+    // the reminder should be smaller then the number of sub-buckets
+    var sortedSubBuckets = newBucket.subBuckets.slice();
+    sortedSubBuckets.sort(function(b1, b2) {
+      return b2.count - b1.count;
+    });
+    var reminderCopy = reminder;
+    for (var i=0; i < safeMin(sortedSubBuckets.length, reminderCopy); i++) {
+      if (sortedSubBuckets[i]) {
+        sortedSubBuckets[i].count += 1;
+        reminder -= 1;
       }
     }
   }
-};
+}
+
+function mergeSubBuckets(thisBucket, otherBucket, newBucket) {
+  newBucket.subBuckets = newBucket.subBuckets || [];
+  for (var i=0; i < safeMax(thisBucket.subBuckets.length, otherBucket.subBuckets.length); i++) {
+    if (thisBucket.subBuckets[i] && otherBucket.subBuckets[i])
+      setBucket(newBucket.subBuckets, i, thisBucket.subBuckets[i].count + otherBucket.subBuckets[i].count,
+        safeMin(thisBucket.subBuckets[i].min, otherBucket.subBuckets[i].min),
+        safeMax(thisBucket.subBuckets[i].max, otherBucket.subBuckets[i].max));
+    else if (thisBucket.subBuckets[i])
+      setBucket(newBucket.subBuckets, i, thisBucket.subBuckets[i].count, thisBucket.subBuckets[i].min,
+        thisBucket.subBuckets[i].max);
+    else if (otherBucket.subBuckets[i])
+      setBucket(newBucket.subBuckets, i, otherBucket.subBuckets[i].count, otherBucket.subBuckets[i].min,
+        otherBucket.subBuckets[i].max);
+  }
+}
 
 BucketHistogram.prototype.toJSON = function() {
   if (this.buckets.length === 0)
@@ -116,12 +196,12 @@ BucketHistogram.prototype.percentile = function(percentile, buckets) {
   var pos = 0;
   var currBucket;
 
-  while (currSum/total < percentile) {
+  while (currSum/total < percentile && pos < buckets.length) {
     prevSum = currSum;
     if (buckets[pos]) {
       if (buckets[pos].subBuckets) {
         var subPos = 0;
-        while (currSum/total < percentile && subPos < this.subScale) {
+        while (currSum/total < percentile && subPos < buckets[pos].subBuckets.length) {
           prevSum = currSum;
           if (buckets[pos].subBuckets[subPos]) {
             currBucket = buckets[pos].subBuckets[subPos];

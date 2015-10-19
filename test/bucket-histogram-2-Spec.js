@@ -283,15 +283,15 @@ describe("histogram add", function () {
   it("adding two empty histograms should return an empty histogram", function () {
     var h1 = new Histogram();
     var h2 = new Histogram();
-    h1.add(h2);
-    expect(h1.toJSON().count).to.be.equal(0);
-    expect(h1.toJSON().min).to.be.undefined;
-    expect(h1.toJSON().max).to.be.undefined;
-    expect(h1.toJSON().median).to.be.undefined;
-    expect(h1.toJSON().p75).to.be.undefined;
-    expect(h1.toJSON().p95).to.be.undefined;
-    expect(h1.toJSON().p99).to.be.undefined;
-    expect(h1.toJSON().p999).to.be.undefined;
+    var h3 = h1.add(h2);
+    expect(h3.toJSON().count).to.be.equal(0);
+    expect(h3.toJSON().min).to.be.undefined;
+    expect(h3.toJSON().max).to.be.undefined;
+    expect(h3.toJSON().median).to.be.undefined;
+    expect(h3.toJSON().p75).to.be.undefined;
+    expect(h3.toJSON().p95).to.be.undefined;
+    expect(h3.toJSON().p99).to.be.undefined;
+    expect(h3.toJSON().p999).to.be.undefined;
   });
 
   it("adding empty histogram to filled one should produce an histogram equivalent to the filled one", function () {
@@ -302,8 +302,8 @@ describe("histogram add", function () {
       h1.update(100*Math.random());
 
     var json2 = h1.toJSON();
-    h1.add(h2);
-    var json1 = h1.toJSON();
+    var h3 = h1.add(h2);
+    var json1 = h3.toJSON();
 
     expect(json1.count).to.be.equal(json2.count);
     expect(json1.min).to.be.equal(json2.min);
@@ -323,9 +323,9 @@ describe("histogram add", function () {
       h1.update(100*Math.random());
 
     var json2 = h1.toJSON();
-    h2.add(h1);
+    var h3 = h2.add(h1);
 
-    var json1 = h2.toJSON();
+    var json1 = h3.toJSON();
 
     expect(json1.count).to.be.equal(json2.count);
     expect(json1.min).to.be.equal(json2.min);
@@ -349,8 +349,8 @@ describe("histogram add", function () {
 
     var json2 = h2.toJSON();
     var json1 = h1.toJSON();
-    h2.add(h1);
-    var json3 = h2.toJSON();
+    var h3 = h2.add(h1);
+    var json3 = h3.toJSON();
 
     expect(json3.count).to.be.equal(json1.count + json2.count);
     expect(json3.min).to.be.equal(Math.min(json1.min, json2.min));
@@ -362,6 +362,162 @@ describe("histogram add", function () {
     expect(json3.p999).to.be.within(198,199);
   });
 
+  it("adding empty bucket with regular bucket", function() {
+    var h1 = new Histogram({focusBuckets: [7,8]});
+    var h2 = new Histogram({focusBuckets: [7,9]});
+
+    h1.buckets[4] = {count: 10, min: 4, max: 6};
+
+    var h3 = h2.add(h1);
+
+    expect(h3.buckets[4].count).to.be.equal(10);
+    expect(h3.buckets[4].min).to.be.equal(4);
+    expect(h3.buckets[4].max).to.be.equal(6);
+  });
+
+  it("adding empty bucket with high precision bucket", function() {
+    var h1 = new Histogram({focusBuckets: [7,8]});
+    var h2 = new Histogram({focusBuckets: [7,9]});
+
+    h1.buckets[4] = {
+      count: 10, min: 4,max: 6,
+      subBuckets: [
+        {count: 5, min: 4, max: 5},
+        {count: 5, min: 6, max: 6}]
+    };
+
+    var h3 = h2.add(h1);
+
+    expect(h3.buckets[4].count).to.be.equal(10);
+    expect(h3.buckets[4].min).to.be.equal(4);
+    expect(h3.buckets[4].max).to.be.equal(6);
+    expect(h3.buckets[4].subBuckets.length).to.be.equal(2);
+    expect(h3.buckets[4].subBuckets[0].count).to.be.equal(5);
+    expect(h3.buckets[4].subBuckets[0].min).to.be.equal(4);
+    expect(h3.buckets[4].subBuckets[0].max).to.be.equal(5);
+    expect(h3.buckets[4].subBuckets[1].count).to.be.equal(5);
+    expect(h3.buckets[4].subBuckets[1].min).to.be.equal(6);
+    expect(h3.buckets[4].subBuckets[1].max).to.be.equal(6);
+  });
+
+  it("adding regular bucket with high precision bucket", function() {
+    var h1 = new Histogram({focusBuckets: [7,8]});
+    var h2 = new Histogram({focusBuckets: [7,9]});
+
+    h1.buckets[8] = {
+      count: 12, min: 26, max: 39,
+      subBuckets: [
+        {count: 2, min: 26, max: 27},
+        {count: 2, min: 28, max: 30},
+        {count: 6, min: 31, max: 32},
+        {count: 1, min: 33, max: 36},
+        {count: 1, min: 37, max: 39}
+      ]
+    };
+    h2.buckets[8] = {count: 6, min: 26, max: 39};
+
+    var h3 = h2.add(h1);
+
+    expect(h3.buckets[8].count).to.be.equal(18);
+    expect(h3.buckets[8].min).to.be.equal(26);
+    expect(h3.buckets[8].max).to.be.equal(39);
+    expect(h3.buckets[8].subBuckets.length).to.be.equal(5);
+    expect(h3.buckets[8].subBuckets[0]).to.be.deep.equal({count: 3, min: 26, max: 27});
+    expect(h3.buckets[8].subBuckets[1]).to.be.deep.equal({count: 3, min: 28, max: 30});
+    expect(h3.buckets[8].subBuckets[2]).to.be.deep.equal({count: 10, min: 31, max: 32});
+    expect(h3.buckets[8].subBuckets[3]).to.be.deep.equal({count: 1, min: 33, max: 36});
+    expect(h3.buckets[8].subBuckets[4]).to.be.deep.equal({count: 1, min: 37, max: 39});
+  });
+
+  it("adding two high precision buckets", function() {
+    var h1 = new Histogram({focusBuckets: [7,8]});
+    var h2 = new Histogram({focusBuckets: [7,9]});
+
+    h1.buckets[8] = {
+      count: 12, min: 26, max: 39,
+      subBuckets: [
+        {count: 2, min: 26, max: 27},
+        {count: 2, min: 28, max: 30},
+        {count: 6, min: 31, max: 32},
+        {count: 1, min: 33, max: 36},
+        {count: 1, min: 37, max: 39}
+      ]
+    };
+    h2.buckets[8] = {
+      count: 20, min: 26, max: 39,
+      subBuckets: [
+        {count: 5, min: 26, max: 27},
+        {count: 10, min: 28, max: 30},
+        {count: 2, min: 31, max: 32},
+        undefined,
+        {count: 3, min: 37, max: 39}
+      ]
+    };
+
+    var h3 = h2.add(h1);
+
+    expect(h3.buckets[8].count).to.be.equal(32);
+    expect(h3.buckets[8].min).to.be.equal(26);
+    expect(h3.buckets[8].max).to.be.equal(39);
+    expect(h3.buckets[8].subBuckets.length).to.be.equal(5);
+    expect(h3.buckets[8].subBuckets[0]).to.be.deep.equal({count: 7, min: 26, max: 27});
+    expect(h3.buckets[8].subBuckets[1]).to.be.deep.equal({count: 12, min: 28, max: 30});
+    expect(h3.buckets[8].subBuckets[2]).to.be.deep.equal({count: 8, min: 31, max: 32});
+    expect(h3.buckets[8].subBuckets[3]).to.be.deep.equal({count: 1, min: 33, max: 36});
+    expect(h3.buckets[8].subBuckets[4]).to.be.deep.equal({count: 4, min: 37, max: 39});
+  });
+
+  it("adding 2 histograms with focus buckets", function () {
+    var h1 = new Histogram({focusBuckets: [7,8]});
+    var h2 = new Histogram({focusBuckets: [7,9]});
+
+    for (var i=0; i < 100; i++)
+      h1.update(i);
+
+    for (i=0; i < 100; i++)
+      h2.update(i);
+
+    // at this point, the histograms have the following buckets
+    // h1: [1, 1, 1, 1, 3, 3, 6,  {10, [1, 2, 1, 2, 2, 2]}, {14, [2, 3, 2, 4, 3]},  24,                         36
+    // h2: [1, 1, 1, 1, 3, 3, 6,  {10, [1, 2, 1, 2, 2, 2]},  14,                   {24, [3, 4,  5,  5,  5, 2]}, 36
+
+    // after adding, h2 should have
+    // h2: [2, 2, 2, 2, 6, 6, 12, {20, [2, 4, 2, 4, 4, 4]}, {28, [4, 6, 4, 8, 6]}, {48, [6, 8, 10, 10, 10, 4]}, 72
+
+    var h3 = h2.add(h1);
+
+    expect(h3.buckets[0].count).to.be.equal(2);
+    expect(h3.buckets[1].count).to.be.equal(2);
+    expect(h3.buckets[2].count).to.be.equal(2);
+    expect(h3.buckets[3].count).to.be.equal(2);
+    expect(h3.buckets[4].count).to.be.equal(6);
+    expect(h3.buckets[5].count).to.be.equal(6);
+    expect(h3.buckets[6].count).to.be.equal(12);
+    expect(h3.buckets[7].count).to.be.equal(20);
+    expect(h3.buckets[7].subBuckets.length).to.be.equal(6);
+    expect(h3.buckets[7].subBuckets[0].count).to.be.equal(2);
+    expect(h3.buckets[7].subBuckets[1].count).to.be.equal(4);
+    expect(h3.buckets[7].subBuckets[2].count).to.be.equal(2);
+    expect(h3.buckets[7].subBuckets[3].count).to.be.equal(4);
+    expect(h3.buckets[7].subBuckets[4].count).to.be.equal(4);
+    expect(h3.buckets[7].subBuckets[5].count).to.be.equal(4);
+    expect(h3.buckets[8].count).to.be.equal(28);
+    expect(h3.buckets[8].subBuckets.length).to.be.equal(5);
+    expect(h3.buckets[8].subBuckets[0].count).to.be.equal(4);
+    expect(h3.buckets[8].subBuckets[1].count).to.be.equal(6);
+    expect(h3.buckets[8].subBuckets[2].count).to.be.equal(4);
+    expect(h3.buckets[8].subBuckets[3].count).to.be.equal(8);
+    expect(h3.buckets[8].subBuckets[4].count).to.be.equal(6);
+    expect(h3.buckets[9].count).to.be.equal(48);
+    expect(h3.buckets[9].subBuckets.length).to.be.equal(6);
+    expect(h3.buckets[9].subBuckets[0].count).to.be.equal(6);
+    expect(h3.buckets[9].subBuckets[1].count).to.be.equal(8);
+    expect(h3.buckets[9].subBuckets[2].count).to.be.equal(10);
+    expect(h3.buckets[9].subBuckets[3].count).to.be.equal(10);
+    expect(h3.buckets[9].subBuckets[4].count).to.be.equal(10);
+    expect(h3.buckets[9].subBuckets[5].count).to.be.equal(4);
+    expect(h3.buckets[10].count).to.be.equal(72);
+  });
 });
 
 
