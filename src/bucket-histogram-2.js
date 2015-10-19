@@ -3,8 +3,9 @@
 function BucketHistogram(properties) {
   properties = properties || {};
   this.minBucket = properties.minBucket || 1;
-  this.bucketSize = properties.bucketSize || Math.sqrt(2);
-  this.norm = Math.log(this.bucketSize);
+  this.mainScale = properties.mainScale || 5;
+  this.subScale = properties.subScale || 5;
+  this.focusBuckets = properties.focusBuckets || [];
   this.values = [];
   this.min = NaN;
   this.max = NaN;
@@ -15,13 +16,27 @@ BucketHistogram.prototype.normalizedLog = function(value) {
   return Math.log(value) / this.norm;
 };
 
+BucketHistogram.prototype.valueToBucket = function (value) {
+  return Math.floor(this.mainScale*(log10(value) - log10(this.minBucket))) + 1;
+};
+
+BucketHistogram.prototype.valueToSubBucket = function (bucketIndex, value) {
+  var bucketLowerBound = Math.floor(Math.pow(10, (bucketIndex-1)/this.mainScale));
+  return Math.floor(this.mainScale*(log10(value) - log10(bucketLowerBound))*this.subScale);
+};
+
+BucketHistogram.prototype.bucketBounds = function (bucketIndex) {
+  return [Math.floor(Math.pow(10, (bucketIndex-1)/this.mainScale)), Math.floor(Math.pow(10, bucketIndex/this.mainScale))];
+};
+
 BucketHistogram.prototype.update = function (value) {
   var bucket;
   if (value < this.minBucket)
     bucket = 0;
   else {
-    bucket = Math.floor(this.normalizedLog(value) - this.normalizedLog(this.minBucket) + 1);
+    bucket = Math.floor(this.mainScale*(log10(value) - log10(this.minBucket))) + 1;
   }
+
   this.values[bucket] = this.values[bucket] || {count: 0};
   this.values[bucket].count += 1;
   this.values[bucket].min = safeMin(this.values[bucket].min, value);
@@ -29,6 +44,16 @@ BucketHistogram.prototype.update = function (value) {
   this.min = safeMin(this.min, value);
   this.max = safeMax(this.max, value);
   this.count = (this.count + 1) || 1;
+
+  if (this.focusBuckets.indexOf(bucket) >=0) {
+    this.values[bucket].subBuckets = this.values[bucket].subBuckets || [];
+
+    var subBucket = this.valueToSubBucket(bucket, value);
+    this.values[bucket].subBuckets[subBucket] = this.values[bucket].subBuckets[subBucket] || {count: 0};
+    this.values[bucket].subBuckets[subBucket].count += 1;
+    this.values[bucket].subBuckets[subBucket].min = safeMin(this.values[bucket].subBuckets[subBucket].min, value);
+    this.values[bucket].subBuckets[subBucket].max = safeMax(this.values[bucket].subBuckets[subBucket].max, value);
+  }
 };
 
 BucketHistogram.prototype.add = function(other) {
@@ -123,3 +148,9 @@ function safeMax(a,b) {
 function safeMin(a,b) {
   return safeNumOp(Math.min, a, b);
 }
+
+var base = Math.log(10);
+function log10(n) {
+  return Math.log(n) / base;
+}
+
