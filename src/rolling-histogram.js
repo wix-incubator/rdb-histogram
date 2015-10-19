@@ -1,4 +1,4 @@
-var BucketHistogram = require("./bucket-histogram");
+var BucketHistogram = require("./bucket-histogram-2");
 
 function RollingHistogram(properties) {
   this.properties = properties || {};
@@ -38,21 +38,37 @@ RollingHistogram.prototype.rescale = function () {
 };
 
 RollingHistogram.prototype.doRollover = function () {
+  //optimize - calculate the hot spots - buckets around the percentiles and focus on those buckets.
+  var stats = this.current.toJSON();
+  var uniqueFocusBuckets = [];
+  if (stats.count > 0) {
+    var focusBuckets = [this.current.valueToBucket(stats.median),
+      this.current.valueToBucket(stats.p75), this.current.valueToBucket(stats.p95),
+      this.current.valueToBucket(stats.p99), this.current.valueToBucket(stats.p999)];
+    uniqueFocusBuckets = focusBuckets.filter(function(elem, pos) {
+      return focusBuckets.indexOf(elem) == pos;
+    });
+  }
   this.history.push(this.current);
-  this.current = new BucketHistogram(this.properties);
+  // todo merge properties
+  this.current = new BucketHistogram({focusBuckets: uniqueFocusBuckets});
   if (this.history.length > this.historyLength)
     this.history.shift();
 };
 
 RollingHistogram.prototype.toJSON = function () {
   this.rescale();
-  var aggregate = new BucketHistogram(this.properties);
+  var aggregate;
 
-  this.history.forEach(function(histogram) {
-    aggregate.add(histogram);
-  });
+  aggregate = this.history.reduce(function(sum, current) {
+    return sum.add(current);
+  }, this.current);
 
-  aggregate.add(this.current);
+//  this.history.forEach(function(histogram) {
+//    aggregate.add(histogram);
+//  });
+
+//  aggregate.add(this.current);
 
   return aggregate.toJSON();
 };
