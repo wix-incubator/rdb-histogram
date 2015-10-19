@@ -176,14 +176,12 @@ describe("histogram precision with precision scale (mainScale = 25)", function (
   });
 });
 
-describe.only("histogram precision with precision focus on median and percentiles (mainScale = 5, subScale=5)", function () {
+describe("histogram precision with precision focus on median and percentiles (mainScale = 5, subScale=5)", function () {
 
   var histogram = new Histogram({focusBuckets: [11, 13, 15]});
   for (var i=0; i < aModel.length; i++)
     histogram.update(aModel[i]);
   var stats = histogram.toJSON();
-
-  console.log(JSON.stringify(histogram.values));
 
   var buckets = {
     median: [100, 109],

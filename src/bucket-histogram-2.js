@@ -114,15 +114,31 @@ BucketHistogram.prototype.percentile = function(percentile, buckets) {
   var currSum = 0;
   var prevSum = 0;
   var pos = 0;
+  var currBucket;
 
   while (currSum/total < percentile) {
     prevSum = currSum;
-    if (buckets[pos])
-      currSum += buckets[pos].count;
+    if (buckets[pos]) {
+      if (buckets[pos].subBuckets) {
+        var subPos = 0;
+        while (currSum/total < percentile && subPos < this.subScale) {
+          prevSum = currSum;
+          if (buckets[pos].subBuckets[subPos]) {
+            currBucket = buckets[pos].subBuckets[subPos];
+            currSum += currBucket.count;
+          }
+          subPos++;
+        }
+      }
+      else {
+        currBucket = buckets[pos];
+        currSum += currBucket.count;
+      }
+    }
     pos++;
   }
 
-  var bucket = buckets[pos-1];
+  var bucket = currBucket;
   var value = bucket.count;
   var cellHigh = bucket.max;
   var cellLow = bucket.min;
