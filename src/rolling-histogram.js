@@ -64,12 +64,6 @@ RollingHistogram.prototype.toJSON = function () {
     return sum.add(current);
   }, this.current);
 
-//  this.history.forEach(function(histogram) {
-//    aggregate.add(histogram);
-//  });
-
-//  aggregate.add(this.current);
-
   return aggregate.toJSON();
 };
 

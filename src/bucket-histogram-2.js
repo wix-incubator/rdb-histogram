@@ -181,7 +181,12 @@ BucketHistogram.prototype.toJSON = function() {
       p95: this.percentile(0.95, this.buckets),
       p99: this.percentile(0.99, this.buckets),
       p999: this.percentile(0.999, this.buckets),
-      numBuckets: this.buckets.length
+      numBuckets: this.buckets.reduce(function(sum, bucket) {
+        if (bucket.subBuckets)
+          return sum + bucket.subBuckets.length;
+        else
+          return sum + 1
+      }, 0)
     }
 };
 
