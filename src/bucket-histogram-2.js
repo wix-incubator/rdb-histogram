@@ -6,7 +6,7 @@ function BucketHistogram(properties) {
   this.mainScale = properties.mainScale || 5;
   this.subScale = properties.subScale || 5;
   this.focusBuckets = properties.focusBuckets || [];
-  this.values = [];
+  this.buckets = [];
   this.min = NaN;
   this.max = NaN;
   this.count = 0;
@@ -37,28 +37,28 @@ BucketHistogram.prototype.update = function (value) {
     bucket = Math.floor(this.mainScale*(log10(value) - log10(this.minBucket))) + 1;
   }
 
-  this.values[bucket] = this.values[bucket] || {count: 0};
-  this.values[bucket].count += 1;
-  this.values[bucket].min = safeMin(this.values[bucket].min, value);
-  this.values[bucket].max = safeMax(this.values[bucket].max, value);
+  this.buckets[bucket] = this.buckets[bucket] || {count: 0};
+  this.buckets[bucket].count += 1;
+  this.buckets[bucket].min = safeMin(this.buckets[bucket].min, value);
+  this.buckets[bucket].max = safeMax(this.buckets[bucket].max, value);
   this.min = safeMin(this.min, value);
   this.max = safeMax(this.max, value);
   this.count = (this.count + 1) || 1;
 
   if (this.focusBuckets.indexOf(bucket) >=0) {
-    this.values[bucket].subBuckets = this.values[bucket].subBuckets || [];
+    this.buckets[bucket].subBuckets = this.buckets[bucket].subBuckets || [];
 
     var subBucket = this.valueToSubBucket(bucket, value);
-    this.values[bucket].subBuckets[subBucket] = this.values[bucket].subBuckets[subBucket] || {count: 0};
-    this.values[bucket].subBuckets[subBucket].count += 1;
-    this.values[bucket].subBuckets[subBucket].min = safeMin(this.values[bucket].subBuckets[subBucket].min, value);
-    this.values[bucket].subBuckets[subBucket].max = safeMax(this.values[bucket].subBuckets[subBucket].max, value);
+    this.buckets[bucket].subBuckets[subBucket] = this.buckets[bucket].subBuckets[subBucket] || {count: 0};
+    this.buckets[bucket].subBuckets[subBucket].count += 1;
+    this.buckets[bucket].subBuckets[subBucket].min = safeMin(this.buckets[bucket].subBuckets[subBucket].min, value);
+    this.buckets[bucket].subBuckets[subBucket].max = safeMax(this.buckets[bucket].subBuckets[subBucket].max, value);
   }
 };
 
 BucketHistogram.prototype.add = function(other) {
   var i;
-  var length = Math.max(this.values.length, other.values.length);
+  var length = Math.max(this.buckets.length, other.buckets.length);
 
   this.min = safeMin(this.min, other.min);
   this.max = safeMax(this.max, other.max);
@@ -66,18 +66,18 @@ BucketHistogram.prototype.add = function(other) {
   this.numBuckets = safeMax(this.numBuckets, other.numBuckets);
 
   for (i=0; i < length; i++) {
-    if (this.values[i] && other.values[i]) {
-      var thisBucket = this.values[i];
-      var otherBucket = other.values[i];
-      this.values[i] = {
+    if (this.buckets[i] && other.buckets[i]) {
+      var thisBucket = this.buckets[i];
+      var otherBucket = other.buckets[i];
+      this.buckets[i] = {
         count: thisBucket.count + otherBucket.count,
         min: safeMin(thisBucket.min, otherBucket.min),
         max: safeMax(thisBucket.max, otherBucket.max)
       }
     }
-    else if (other.values[i]) {
-      var bucket = other.values[i];
-      this.values[i] = {
+    else if (other.buckets[i]) {
+      var bucket = other.buckets[i];
+      this.buckets[i] = {
         count: bucket.count,
         min: bucket.min,
         max: bucket.max
@@ -87,7 +87,7 @@ BucketHistogram.prototype.add = function(other) {
 };
 
 BucketHistogram.prototype.toJSON = function() {
-  if (this.values.length === 0)
+  if (this.buckets.length === 0)
     return {
       count: 0
     };
@@ -96,12 +96,12 @@ BucketHistogram.prototype.toJSON = function() {
       min: this.min,
       max: this.max,
       count: this.count,
-      median: this.percentile(0.5, this.values),
-      p75: this.percentile(0.75, this.values),
-      p95: this.percentile(0.95, this.values),
-      p99: this.percentile(0.99, this.values),
-      p999: this.percentile(0.999, this.values),
-      numBuckets: this.values.length
+      median: this.percentile(0.5, this.buckets),
+      p75: this.percentile(0.75, this.buckets),
+      p95: this.percentile(0.95, this.buckets),
+      p99: this.percentile(0.99, this.buckets),
+      p999: this.percentile(0.999, this.buckets),
+      numBuckets: this.buckets.length
     }
 };
 
