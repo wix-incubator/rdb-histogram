@@ -401,8 +401,8 @@ describe("histogram add", function () {
   });
 
   it("adding regular bucket with high precision bucket", function() {
-    var h1 = new Histogram({focusBuckets: [7,8]});
-    var h2 = new Histogram({focusBuckets: [7,9]});
+    var h1 = new Histogram({}, [7,8]);
+    var h2 = new Histogram({}, [7,9]);
 
     h1.buckets[8] = {
       count: 12, min: 26, max: 39,
@@ -468,8 +468,8 @@ describe("histogram add", function () {
   });
 
   it("adding 2 histograms with focus buckets", function () {
-    var h1 = new Histogram({focusBuckets: [7,8]});
-    var h2 = new Histogram({focusBuckets: [7,9]});
+    var h1 = new Histogram({}, [7,8]);
+    var h2 = new Histogram({}, [7,9]);
 
     for (var i=0; i < 100; i++)
       h1.update(i);

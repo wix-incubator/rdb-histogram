@@ -51,7 +51,7 @@ RollingHistogram.prototype.doRollover = function () {
   }
   this.history.push(this.current);
   // todo merge properties
-  this.current = new BucketHistogram({focusBuckets: uniqueFocusBuckets});
+  this.current = new BucketHistogram(this.properties, uniqueFocusBuckets);
   if (this.history.length > this.historyLength)
     this.history.shift();
 };

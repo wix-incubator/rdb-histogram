@@ -1,11 +1,11 @@
 
 
-function BucketHistogram(properties) {
+function BucketHistogram(properties, focusBuckets) {
   properties = properties || {};
   this.minBucket = properties.minBucket || 1;
   this.mainScale = properties.mainScale || 5;
   this.subScale = properties.subScale || 5;
-  this.focusBuckets = properties.focusBuckets || [];
+  this.focusBuckets = focusBuckets || [];
   this.buckets = [];
   this.min = NaN;
   this.max = NaN;
@@ -73,6 +73,10 @@ BucketHistogram.prototype.add = function(other) {
   result.min = safeMin(this.min, other.min);
   result.max = safeMax(this.max, other.max);
   result.count = this.count + other.count;
+  var concatFocusBuckets = this.focusBuckets.concat(other.focusBuckets);
+  result.focusBuckets = concatFocusBuckets.filter(function(elem, pos) {
+    return concatFocusBuckets.indexOf(elem) == pos;
+  });
 
   for (i=0; i < length; i++) {
     if (this.buckets[i] && other.buckets[i]) {
