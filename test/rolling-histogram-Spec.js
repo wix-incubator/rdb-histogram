@@ -159,7 +159,8 @@ function model4() {
 
 describe("rolling histogram end 2 end", function () {
 
-  function end2end(model) {
+  function end2end(model, properties, accuracy) {
+    accuracy = accuracy || 0.05; // default accuracy
     MockDate.set("1/1/2000 00:00:00");
     var values = [];
     function store(value) {
@@ -167,7 +168,7 @@ describe("rolling histogram end 2 end", function () {
       return value;
     }
     var i;
-    var histogram = new RollingHistogram();
+    var histogram = new RollingHistogram(properties);
     for (i=0; i < 10000; i++)
       histogram.update(model());
 
@@ -204,13 +205,17 @@ describe("rolling histogram end 2 end", function () {
     expect(stats.count).to.be.equal(values.length);
     expect(stats.min).to.be.equal(min);
     expect(stats.max).to.be.equal(max);
-    expect(stats.median).to.be.within(median * 0.95, median * 1.05);
-    expect(stats.p75).to.be.within(p75 * 0.95, p75 * 1.05);
-    expect(stats.p95).to.be.within(p95 * 0.95, p95 * 1.05);
-    expect(stats.p99).to.be.within(p99 * 0.95, p99 * 1.05);
-    expect(stats.p999).to.be.within(p999 * 0.95, p999 * 1.05);
+    var lowAcc = 1-accuracy;
+    var highAcc = 1+accuracy;
+    expect(stats.median).to.be.within(median * lowAcc, median * highAcc);
+    expect(stats.p75).to.be.within(p75 * lowAcc, p75 * highAcc);
+    expect(stats.p95).to.be.within(p95 * lowAcc, p95 * highAcc);
+    expect(stats.p99).to.be.within(p99 * lowAcc, p99 * highAcc);
+    expect(stats.p999).to.be.within(p999 * lowAcc, p999 * highAcc);
   }
 
+  // 10% accuracy comes from default config of the histogram of 5 buckets and 5 sub-buckets
+  // meaning accuracy of 10^(1/25) ~ 1.1 ~ 10%
   it("compute percentiles within 10% accuracy (+-5%) for gaussian model after 1:15 minute", function() {
     end2end(model1);
   });
@@ -227,6 +232,14 @@ describe("rolling histogram end 2 end", function () {
     end2end(model4);
   });
 
+  // 2.5% accuracy comes from config of the histogram of 10 buckets and 10 sub-buckets
+  // meaning accuracy of 10^(1/100) ~ 1.023 ~ 2.5%
+  it("compute percentiles within 2.5% accuracy (+-1.25%) for model 1 after 1:15 minute", function() {
+    end2end(model1, {
+      mainScale: 10,
+      subScale: 10},
+    0.0125);
+  });
 });
 
 
