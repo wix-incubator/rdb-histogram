@@ -28,7 +28,12 @@ A few things to notice -
 
 Using the same model, with the RDB Histogram we get the following graph:
 
-![Graph of the Metrics histogram](rdb-histogram.png?raw=true "RDB Histogram")
+![Graph of the RDB histogram](rdb-histogram.png?raw=true "RDB Histogram")
+
+And the model itself makes the following graph:
+
+![Graph of the Model histogram](model.png?raw=true "Model Histogram")
+
 
 ## Metrics Histogram discussion
 
