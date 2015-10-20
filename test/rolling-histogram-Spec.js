@@ -109,24 +109,57 @@ describe("rolling histogram", function () {
     expect(stats.p999).to.be.undefined;
   });
 
-  function normalRand() {
-    return (Math.random() + Math.random() + Math.random() + Math.random() + Math.random() +
-      Math.random() + Math.random() + Math.random() + Math.random() + Math.random()) / 10;
-  }
+});
 
-  function model1() {
-    var group = Math.random()*200;
-    if (group < 92*2)
-      return 40 + normalRand()*10;
-    else if (group < (92+6)*2)
-      return 60 + normalRand()*10;
-    else if (group < (92+6+1.5)*2)
-      return 70 + normalRand()*10;
-    else
-      return 80 + normalRand()*10;
-  }
+function normalRand() {
+  // making a gaussian distribution from the linear distribution
+  return (Math.random() + Math.random() + Math.random() + Math.random() + Math.random() +
+    Math.random() + Math.random() + Math.random() + Math.random() + Math.random()) / 10;
+}
 
-  it.only("compute percentiles within 10% accuracy (+-5%) for model 1 after 1:15 minute", function() {
+function model1() {
+  // a model with gaussian distribution
+  return normalRand()*1000 + 10;
+}
+
+function model2() {
+  // a model with linear distribution
+  return Math.random() * 1000 + 10;
+}
+
+function model3() {
+  // a model with the percentiles at different ranges
+  // medain and p75 -> [40,50]
+  // p95 -> [60, 70]
+  // p99 -> [70, 80]
+  // p999 -> [80, 90]
+  var group = Math.random()*200;
+  if (group < 92*2)
+    return 40 + normalRand()*10;
+  else if (group < (92+6)*2)
+    return 60 + normalRand()*10;
+  else if (group < (92+6+1.5)*2)
+    return 70 + normalRand()*10;
+  else
+    return 80 + normalRand()*10;
+}
+
+function model4() {
+  // a model with a spiky model
+  // 20% for small spike
+  // 3 % for large spike
+  var value = normalRand()*1000 + 10;
+  if (Math.random() > 0.8)
+    value += normalRand()*10000;
+  if (Math.random() > 0.97)
+    value += normalRand()*100000;
+  return value;
+}
+
+
+describe("rolling histogram end 2 end", function () {
+
+  function end2end(model) {
     MockDate.set("1/1/2000 00:00:00");
     var values = [];
     function store(value) {
@@ -136,23 +169,23 @@ describe("rolling histogram", function () {
     var i;
     var histogram = new RollingHistogram();
     for (i=0; i < 10000; i++)
-      histogram.update(model1());
+      histogram.update(model());
 
     MockDate.set("1/1/2000 00:00:16");
     for (i=0; i < 10000; i++)
-      histogram.update(store(model1()));
+      histogram.update(store(model()));
 
     MockDate.set("1/1/2000 00:00:31");
     for (i=0; i < 10000; i++)
-      histogram.update(store(model1()));
+      histogram.update(store(model()));
 
     MockDate.set("1/1/2000 00:00:46");
     for (i=0; i < 10000; i++)
-      histogram.update(store(model1()));
+      histogram.update(store(model()));
 
     MockDate.set("1/1/2000 00:01:01");
     for (i=0; i < 10000; i++)
-      histogram.update(store(model1()));
+      histogram.update(store(model()));
 
     MockDate.set("1/1/2000 00:01:16");
 
@@ -168,7 +201,6 @@ describe("rolling histogram", function () {
     var p999 = values[Math.round(values.length * 0.999)];
 
     var stats = histogram.toJSON();
-    console.log(JSON.stringify(histogram.history[0].buckets));
     expect(stats.count).to.be.equal(values.length);
     expect(stats.min).to.be.equal(min);
     expect(stats.max).to.be.equal(max);
@@ -177,6 +209,22 @@ describe("rolling histogram", function () {
     expect(stats.p95).to.be.within(p95 * 0.95, p95 * 1.05);
     expect(stats.p99).to.be.within(p99 * 0.95, p99 * 1.05);
     expect(stats.p999).to.be.within(p999 * 0.95, p999 * 1.05);
+  }
+
+  it("compute percentiles within 10% accuracy (+-5%) for gaussian model after 1:15 minute", function() {
+    end2end(model1);
+  });
+
+  it("compute percentiles within 10% accuracy (+-5%) for linear model after 1:15 minute", function() {
+    end2end(model2);
+  });
+
+  it("compute percentiles within 10% accuracy (+-5%) for model 3 after 1:15 minute", function() {
+    end2end(model3);
+  });
+
+  it("compute percentiles within 10% accuracy (+-5%) for model 4 after 1:15 minute", function() {
+    end2end(model4);
   });
 
 });
