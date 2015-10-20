@@ -1,6 +1,6 @@
 
 
-function BucketHistogram(properties, focusBuckets) {
+function DBHistogram(properties, focusBuckets) {
   properties = properties || {};
   this.minBucket = properties.minBucket || 1;
   this.mainScale = properties.mainScale || 5;
@@ -12,24 +12,24 @@ function BucketHistogram(properties, focusBuckets) {
   this.count = 0;
 }
 
-BucketHistogram.prototype.normalizedLog = function(value) {
+DBHistogram.prototype.normalizedLog = function(value) {
   return Math.log(value) / this.norm;
 };
 
-BucketHistogram.prototype.valueToBucket = function (value) {
+DBHistogram.prototype.valueToBucket = function (value) {
   return Math.floor(this.mainScale*(log10(value) - log10(this.minBucket))) + 1;
 };
 
-BucketHistogram.prototype.valueToSubBucket = function (bucketIndex, value) {
+DBHistogram.prototype.valueToSubBucket = function (bucketIndex, value) {
   var bucketLowerBound = Math.floor(Math.pow(10, (bucketIndex-1)/this.mainScale));
   return Math.floor(this.mainScale*(log10(value) - log10(bucketLowerBound))*this.subScale);
 };
 
-BucketHistogram.prototype.bucketBounds = function (bucketIndex) {
+DBHistogram.prototype.bucketBounds = function (bucketIndex) {
   return [Math.floor(Math.pow(10, (bucketIndex-1)/this.mainScale)), Math.floor(Math.pow(10, bucketIndex/this.mainScale))];
 };
 
-BucketHistogram.prototype.update = function (value) {
+DBHistogram.prototype.update = function (value) {
   var bucket;
   if (value < this.minBucket)
     bucket = 0;
@@ -56,12 +56,12 @@ BucketHistogram.prototype.update = function (value) {
   }
 };
 
-BucketHistogram.prototype.add = function(other) {
+DBHistogram.prototype.add = function(other) {
 
   if (this.mainScale !== other.mainScale || this.subScale !== other.subScale || this.minBucket !== other.minBucket)
-    throw new Error("Histogram.add: incompatible histogram configs");
+    throw new Error("DBHistogram.add: incompatible histogram configs");
 
-  var result = new BucketHistogram({
+  var result = new DBHistogram({
     minBucket: this.minBucket,
     mainScale: this.mainScale,
     subScale: this.subScale
@@ -170,7 +170,7 @@ function mergeSubBuckets(thisBucket, otherBucket, newBucket) {
   }
 }
 
-BucketHistogram.prototype.toJSON = function() {
+DBHistogram.prototype.toJSON = function() {
   if (this.buckets.length === 0)
     return {
       count: 0
@@ -189,7 +189,7 @@ BucketHistogram.prototype.toJSON = function() {
     }
 };
 
-BucketHistogram.prototype.numberOfBuckets = function() {
+DBHistogram.prototype.numberOfBuckets = function() {
   return this.buckets.reduce(function(sum, bucket) {
     if (bucket.subBuckets)
       return sum + bucket.subBuckets.length + 1;
@@ -198,7 +198,7 @@ BucketHistogram.prototype.numberOfBuckets = function() {
   }, 0)
 }
 
-BucketHistogram.prototype.percentile = function(percentile, buckets) {
+DBHistogram.prototype.percentile = function(percentile, buckets) {
   var total = buckets.map(function(bc) {
     return bc.count || 0;
   }).reduce(function(a,b) {
@@ -239,7 +239,7 @@ BucketHistogram.prototype.percentile = function(percentile, buckets) {
   return percentOfCell * (cellHigh-cellLow) + cellLow;
 };
 
-module.exports = BucketHistogram;
+module.exports = DBHistogram;
 
 function safeNumOp(fn, a, b) {
   if (isNaN(a))

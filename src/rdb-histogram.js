@@ -1,6 +1,6 @@
-var BucketHistogram = require("./dynamic-bucket-histogram");
+var DBHistogram = require("./dynamic-bucket-histogram");
 
-function RollingHistogram(properties) {
+function RDBHistogram(properties) {
   this.properties = properties || {};
   this.historyInterval = this.properties.historyInterval || 15*1000;
   this.historyLength = this.properties.historyLength || 4;
@@ -8,21 +8,21 @@ function RollingHistogram(properties) {
   this.reset();
 }
 
-RollingHistogram.prototype.reset = function () {
+RDBHistogram.prototype.reset = function () {
   this._landmark = Date.now();
   this._nextRescale = this._landmark + this.historyInterval;
 
   this.history = [];
-  this.current = new BucketHistogram(this.properties);
+  this.current = new DBHistogram(this.properties);
 
 };
 
-RollingHistogram.prototype.update = function (value) {
+RDBHistogram.prototype.update = function (value) {
   this.rescale();
   this.current.update(value);
 };
 
-RollingHistogram.prototype.rescale = function () {
+RDBHistogram.prototype.rescale = function () {
   var now = Date.now();
 
   // optimization - if the histogram was not active a long time, just reset it
@@ -37,7 +37,7 @@ RollingHistogram.prototype.rescale = function () {
     }
 };
 
-RollingHistogram.prototype.doRollover = function () {
+RDBHistogram.prototype.doRollover = function () {
   //optimize - calculate the hot spots - buckets around the percentiles and focus on those buckets.
   var stats = this.current.toJSON();
   var uniqueFocusBuckets = [];
@@ -51,12 +51,12 @@ RollingHistogram.prototype.doRollover = function () {
   }
   this.history.push(this.current);
   // todo merge properties
-  this.current = new BucketHistogram(this.properties, uniqueFocusBuckets);
+  this.current = new DBHistogram(this.properties, uniqueFocusBuckets);
   if (this.history.length > this.historyLength)
     this.history.shift();
 };
 
-RollingHistogram.prototype.toJSON = function () {
+RDBHistogram.prototype.toJSON = function () {
   this.rescale();
   var aggregate;
 
@@ -73,4 +73,4 @@ RollingHistogram.prototype.toJSON = function () {
   return  stats;
 };
 
-module.exports = RollingHistogram;
+module.exports = RDBHistogram;

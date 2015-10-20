@@ -2,11 +2,11 @@
 // Mocha actually uses property getters as function calls (like .empty) and lint see those as errors by default
 /*jshint -W030 */
 var expect = require('chai').expect;
-var Histogram = require('../src/dynamic-bucket-histogram');
+var DBHistogram = require('../src/dynamic-bucket-histogram');
 
 describe("histogram with uniform distribution 0..100", function () {
 
-  var histogram = new Histogram();
+  var histogram = new DBHistogram();
   for (var i=0; i < 101; i++)
     histogram.update(i);
 
@@ -105,7 +105,7 @@ var aModel = [12.34, 143.33, 136.77, 28.67, 83.92, 117.31, 212.12, 45.77, 363.97
 
 describe("histogram precision with default config (mainScale = 5)", function () {
 
-  var histogram = new Histogram();
+  var histogram = new DBHistogram();
   for (var i=0; i < aModel.length; i++)
     histogram.update(aModel[i]);
   var stats = histogram.toJSON();
@@ -142,7 +142,7 @@ describe("histogram precision with default config (mainScale = 5)", function () 
 
 describe("histogram precision with precision scale (mainScale = 25)", function () {
 
-  var histogram = new Histogram({mainScale: 25});
+  var histogram = new DBHistogram({mainScale: 25});
   for (var i=0; i < aModel.length; i++)
     histogram.update(aModel[i]);
   var stats = histogram.toJSON();
@@ -178,7 +178,7 @@ describe("histogram precision with precision scale (mainScale = 25)", function (
 
 describe("histogram precision with precision focus on median and percentiles (mainScale = 5, subScale=5)", function () {
 
-  var histogram = new Histogram({focusBuckets: [11, 13, 15]});
+  var histogram = new DBHistogram({focusBuckets: [11, 13, 15]});
   for (var i=0; i < aModel.length; i++)
     histogram.update(aModel[i]);
   var stats = histogram.toJSON();
@@ -214,7 +214,7 @@ describe("histogram precision with precision focus on median and percentiles (ma
 
 describe("histogram of spiky distribution 92% at 90-110, 6% at 900-1100, 1.5% at 1900-2100 and 0.5% at 3500-4500", function () {
 
-  var histogram = new Histogram();
+  var histogram = new DBHistogram();
   for (var i=0; i < 10000; i++) {
     var group = i % 200;
     if (group < 92*2)
@@ -259,12 +259,12 @@ describe("histogram of spiky distribution 92% at 90-110, 6% at 900-1100, 1.5% at
 describe("histogram minimal number of events", function () {
 
   it("should return empty for no events", function () {
-    var histogram = new Histogram();
+    var histogram = new DBHistogram();
     expect(histogram.toJSON().count).to.be.equal(0);
   });
 
   it("should return all stats equal for one event", function () {
-    var histogram = new Histogram();
+    var histogram = new DBHistogram();
     histogram.update(10);
     expect(histogram.toJSON().count).to.be.equal(1);
     expect(histogram.toJSON().max).to.be.equal(10);
@@ -281,8 +281,8 @@ describe("histogram minimal number of events", function () {
 describe("histogram add", function () {
 
   it("adding two empty histograms should return an empty histogram", function () {
-    var h1 = new Histogram();
-    var h2 = new Histogram();
+    var h1 = new DBHistogram();
+    var h2 = new DBHistogram();
     var h3 = h1.add(h2);
     expect(h3.toJSON().count).to.be.equal(0);
     expect(h3.toJSON().min).to.be.undefined;
@@ -295,8 +295,8 @@ describe("histogram add", function () {
   });
 
   it("adding empty histogram to filled one should produce an histogram equivalent to the filled one", function () {
-    var h1 = new Histogram();
-    var h2 = new Histogram();
+    var h1 = new DBHistogram();
+    var h2 = new DBHistogram();
 
     for (var i=0; i < 1000; i++)
       h1.update(100*Math.random());
@@ -316,8 +316,8 @@ describe("histogram add", function () {
   });
 
   it("adding filled histogram to an empty one should produce an histogram equivalent to the filled one", function () {
-    var h1 = new Histogram();
-    var h2 = new Histogram();
+    var h1 = new DBHistogram();
+    var h2 = new DBHistogram();
 
     for (var i=0; i < 1000; i++)
       h1.update(100*Math.random());
@@ -338,8 +338,8 @@ describe("histogram add", function () {
   });
 
   it("adding 2 histogram return the added histogram", function () {
-    var h1 = new Histogram();
-    var h2 = new Histogram();
+    var h1 = new DBHistogram();
+    var h2 = new DBHistogram();
 
     for (var i=0; i < 100; i++)
       h1.update(i);
@@ -363,8 +363,8 @@ describe("histogram add", function () {
   });
 
   it("adding empty bucket with regular bucket", function() {
-    var h1 = new Histogram({focusBuckets: [7,8]});
-    var h2 = new Histogram({focusBuckets: [7,9]});
+    var h1 = new DBHistogram({focusBuckets: [7,8]});
+    var h2 = new DBHistogram({focusBuckets: [7,9]});
 
     h1.buckets[4] = {count: 10, min: 4, max: 6};
 
@@ -376,8 +376,8 @@ describe("histogram add", function () {
   });
 
   it("adding empty bucket with high precision bucket", function() {
-    var h1 = new Histogram({focusBuckets: [7,8]});
-    var h2 = new Histogram({focusBuckets: [7,9]});
+    var h1 = new DBHistogram({focusBuckets: [7,8]});
+    var h2 = new DBHistogram({focusBuckets: [7,9]});
 
     h1.buckets[4] = {
       count: 10, min: 4,max: 6,
@@ -401,8 +401,8 @@ describe("histogram add", function () {
   });
 
   it("adding regular bucket with high precision bucket", function() {
-    var h1 = new Histogram({}, [7,8]);
-    var h2 = new Histogram({}, [7,9]);
+    var h1 = new DBHistogram({}, [7,8]);
+    var h2 = new DBHistogram({}, [7,9]);
 
     h1.buckets[8] = {
       count: 12, min: 26, max: 39,
@@ -430,8 +430,8 @@ describe("histogram add", function () {
   });
 
   it("adding two high precision buckets", function() {
-    var h1 = new Histogram({focusBuckets: [7,8]});
-    var h2 = new Histogram({focusBuckets: [7,9]});
+    var h1 = new DBHistogram({focusBuckets: [7,8]});
+    var h2 = new DBHistogram({focusBuckets: [7,9]});
 
     h1.buckets[8] = {
       count: 12, min: 26, max: 39,
@@ -468,8 +468,8 @@ describe("histogram add", function () {
   });
 
   it("adding 2 histograms with focus buckets", function () {
-    var h1 = new Histogram({}, [7,8]);
-    var h2 = new Histogram({}, [7,9]);
+    var h1 = new DBHistogram({}, [7,8]);
+    var h2 = new DBHistogram({}, [7,9]);
 
     for (var i=0; i < 100; i++)
       h1.update(i);

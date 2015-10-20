@@ -2,7 +2,7 @@
 // Mocha actually uses property getters as function calls (like .empty) and lint see those as errors by default
 /*jshint -W030 */
 var expect = require('chai').expect;
-var RollingHistogram = require('../src/rdb-histogram');
+var RDBHistogram = require('../src/rdb-histogram');
 var MockDate = require('mockdate');
 var util = require('util');
 
@@ -12,7 +12,7 @@ describe("rolling histogram", function () {
 
 
   it("should work as a regular histogram in a short timeframe", function() {
-    var histogram = new RollingHistogram();
+    var histogram = new RDBHistogram();
     for (var i=0; i < 101; i++)
       histogram.update(i);
     var stats = histogram.toJSON();
@@ -28,7 +28,7 @@ describe("rolling histogram", function () {
 
   it("should retain all measurements within 1 minute", function() {
     MockDate.set("1/1/2000 00:00:00");
-    var histogram = new RollingHistogram();
+    var histogram = new RDBHistogram();
     for (var i=0; i < 101; i++)
       histogram.update(i);
 
@@ -47,7 +47,7 @@ describe("rolling histogram", function () {
 
   it("should consider all data points in 1 minute history as the same given uniform behavior", function() {
     MockDate.set("1/1/2000 00:00:00");
-    var histogram = new RollingHistogram();
+    var histogram = new RDBHistogram();
     for (var i=0; i < 100; i++) {
       if (i < 25)
         MockDate.set("1/1/2000 00:00:05");
@@ -78,7 +78,7 @@ describe("rolling histogram", function () {
 
   it("should focus on the percentiles after 15 seconds", function() {
     MockDate.set("1/1/2000 00:00:00");
-    var histogram = new RollingHistogram();
+    var histogram = new RDBHistogram();
     for (var i=0; i < 100; i++) {
       histogram.update((i*13)%100);
     }
@@ -92,7 +92,7 @@ describe("rolling histogram", function () {
 
   it("should clear all measurements within 1 minute and 15 seconds", function() {
     MockDate.set("1/1/2000 00:00:00");
-    var histogram = new RollingHistogram();
+    var histogram = new RDBHistogram();
     for (var i=0; i < 101; i++)
       histogram.update(i);
 
@@ -168,7 +168,7 @@ describe("rolling histogram end 2 end", function () {
       return value;
     }
     var i;
-    var histogram = new RollingHistogram(properties);
+    var histogram = new RDBHistogram(properties);
     for (i=0; i < 10000; i++)
       histogram.update(model());
 
