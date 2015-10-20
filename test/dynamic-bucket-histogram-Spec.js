@@ -2,7 +2,7 @@
 // Mocha actually uses property getters as function calls (like .empty) and lint see those as errors by default
 /*jshint -W030 */
 var expect = require('chai').expect;
-var Histogram = require('../src/bucket-histogram-2');
+var Histogram = require('../src/dynamic-bucket-histogram');
 
 describe("histogram with uniform distribution 0..100", function () {
 

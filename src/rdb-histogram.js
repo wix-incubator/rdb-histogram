@@ -1,4 +1,4 @@
-var BucketHistogram = require("./bucket-histogram-2");
+var BucketHistogram = require("./dynamic-bucket-histogram");
 
 function RollingHistogram(properties) {
   this.properties = properties || {};
