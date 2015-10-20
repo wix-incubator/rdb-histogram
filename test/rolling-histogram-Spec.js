@@ -109,6 +109,76 @@ describe("rolling histogram", function () {
     expect(stats.p999).to.be.undefined;
   });
 
+  function normalRand() {
+    return (Math.random() + Math.random() + Math.random() + Math.random() + Math.random() +
+      Math.random() + Math.random() + Math.random() + Math.random() + Math.random()) / 10;
+  }
+
+  function model1() {
+    var group = Math.random()*200;
+    if (group < 92*2)
+      return 40 + normalRand()*10;
+    else if (group < (92+6)*2)
+      return 60 + normalRand()*10;
+    else if (group < (92+6+1.5)*2)
+      return 70 + normalRand()*10;
+    else
+      return 80 + normalRand()*10;
+  }
+
+  it.only("compute percentiles within 10% accuracy (+-5%) for model 1 after 1:15 minute", function() {
+    MockDate.set("1/1/2000 00:00:00");
+    var values = [];
+    function store(value) {
+      values.push(value);
+      return value;
+    }
+    var i;
+    var histogram = new RollingHistogram();
+    for (i=0; i < 10000; i++)
+      histogram.update(model1());
+
+    MockDate.set("1/1/2000 00:00:16");
+    for (i=0; i < 10000; i++)
+      histogram.update(store(model1()));
+
+    MockDate.set("1/1/2000 00:00:31");
+    for (i=0; i < 10000; i++)
+      histogram.update(store(model1()));
+
+    MockDate.set("1/1/2000 00:00:46");
+    for (i=0; i < 10000; i++)
+      histogram.update(store(model1()));
+
+    MockDate.set("1/1/2000 00:01:01");
+    for (i=0; i < 10000; i++)
+      histogram.update(store(model1()));
+
+    MockDate.set("1/1/2000 00:01:16");
+
+    values.sort(function(a,b) {return a-b;});
+
+
+    var max = values.reduce(function(agg, val) {return Math.max(agg, val);}, 0);
+    var min = values.reduce(function(agg, val) {return Math.min(agg, val);}, 100000000);
+    var median = values[Math.round(values.length/2)];
+    var p75 = values[Math.round(values.length * 0.75)];
+    var p95 = values[Math.round(values.length * 0.95)];
+    var p99 = values[Math.round(values.length * 0.99)];
+    var p999 = values[Math.round(values.length * 0.999)];
+
+    var stats = histogram.toJSON();
+    console.log(JSON.stringify(histogram.history[0].buckets));
+    expect(stats.count).to.be.equal(values.length);
+    expect(stats.min).to.be.equal(min);
+    expect(stats.max).to.be.equal(max);
+    expect(stats.median).to.be.within(median * 0.95, median * 1.05);
+    expect(stats.p75).to.be.within(p75 * 0.95, p75 * 1.05);
+    expect(stats.p95).to.be.within(p95 * 0.95, p95 * 1.05);
+    expect(stats.p99).to.be.within(p99 * 0.95, p99 * 1.05);
+    expect(stats.p999).to.be.within(p999 * 0.95, p999 * 1.05);
+  });
+
 });
 
 
