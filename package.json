@@ -1,8 +1,8 @@
 {
-  "name": "bucket-histogram",
+  "name": "rdb-histogram",
   "version": "1.0.0",
-  "description": "Alternative histogram model, based on buckets, for the measured metrics port",
-  "main": "measured-ex.js",
+  "description": "Rolling Dynamic range Bucket Histogram, for computing high precision histograms with time sensitivity",
+  "main": "src/rdb-histogram.js",
   "scripts": {
     "lint": "jshint test/ ",
     "test": "mocha",
