@@ -25,7 +25,7 @@ The default configuration ensures precision of about 10% in the computed percent
 
 ## Why?
 
-Read the comparison with the popular Metrics Histogram algorithm [here](metrics-vs-rdb).
+Read the comparison with the popular Metrics Histogram algorithm [here](metrics-vs-rdb.md).
 
 ## Usage
 
