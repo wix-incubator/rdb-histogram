@@ -64,7 +64,13 @@ RollingHistogram.prototype.toJSON = function () {
     return sum.add(current);
   }, this.current);
 
-  return aggregate.toJSON();
+  var numberOfBuckets = this.history.reduce(function(sum, current) {
+    return sum + current.numberOfBuckets();
+  }, this.current.numberOfBuckets());
+
+  var stats = aggregate.toJSON();
+  stats.numBuckets = numberOfBuckets;
+  return  stats;
 };
 
 module.exports = RollingHistogram;

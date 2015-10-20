@@ -45,7 +45,7 @@ describe("rolling histogram", function () {
     expect(stats.p999).to.be.within(99, 100);
   });
 
-  it("should consider all data points in 1 minute history as the same given no change in behavior", function() {
+  it("should consider all data points in 1 minute history as the same given uniform behavior", function() {
     MockDate.set("1/1/2000 00:00:00");
     var histogram = new RollingHistogram();
     for (var i=0; i < 100; i++) {
@@ -64,7 +64,9 @@ describe("rolling histogram", function () {
     MockDate.set("1/1/2000 00:01:00");
 
     var stats = histogram.toJSON();
+
     expect(stats.count).to.be.equal(100);
+    expect(stats.numBuckets).to.be.equal(61);
     expect(stats.min).to.be.equal(0);
     expect(stats.max).to.be.equal(99);
     expect(stats.median).to.be.within(49, 51);
