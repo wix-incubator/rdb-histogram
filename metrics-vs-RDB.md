@@ -69,11 +69,19 @@ On the time dimension, the RDB Histogram uses 4 historic time buckets for every 
 On the value dimension, the RDB histogram is using multiple buckets to count the number of samples in a range. The size of the buckets
  determine the accuracy of the histogram - the smaller buckets the histogram is more accurate but requires more memory.
  With the default configuration we use 5 buckets and 5 sub-buckets for each scale (every power of 10).
- 5 buckets and 5 sub-buckets results in bucket size of ```1 .. 10^(1/25) ~ 1.1``` or precision of 10%.
+ 5 buckets and 5 sub-buckets results in sub-bucket size of ```1 .. 10^(1/25) ~ 1.1``` ensuring a precision of 10%.
 
-The histogram is using buckets and sub buckets to preserve memory. By using 5 buckets per scale and sub-buckets only for the buckets that
-are interesting we preserve memory. The interesting buckets are those buckets that are needed to compute the percentiles the RDB Histogram
- computes on the call to ```toJSON()```.
+The histogram is using buckets and sub buckets to preserve memory. By using 5 buckets per scale and sub-buckets only when needed we minimise
+the amount of used memory. Sub-buckets are only introduced for the buckets that are interesting - that one of the percentiles we compute
+falls within  for the buckets that that bucket.
+
+In fact, then number of buckets is limited to ```5 * (9 * 5 + 5) = 750``` buckets, each bucket storing 3 numbers resulting in ```750``` numbers.
+The 750 numbers of RDB Histogram is lower then the ```1024 * 2 = 2048``` numbers of Metrics Histogram.
+
+The RDB histogram number 750 comes from having 5 time buckets times 5 buckets per power of 10 assuming 9 powers of 10 (between 1 and 1,000,000,000 -
+the range of an integer and the range between the nano-second scale and the seconds scale).
+and 5 sub-buckets. This amounts to 250 buckets - times 3 numbers per bucket we get 750 numbers. The Metrics Histogram number of 2048 comes from storing two numbers for each sample -
+the value and probability of the value to linger).
 
 One more trick the RDB histogram is using to enhance accuracy is track the min and max for each bucket and sub-bucket making sure to
  not predict percentile values that are out of the real samples range due to the built in in-accuracy.
