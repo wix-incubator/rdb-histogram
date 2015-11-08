@@ -1,9 +1,8 @@
-var RollingHistogram = require("./src/rolling-histogram");
-module.exports.RollingHistogram = RollingHistogram;
+var RDBHistogram = require('./rdb-histogram');
 
-module.exports.patchMeasured = function(measured) {
+function patchMeasured(measured) {
   // replace the direct constructor
-  measured.Histogram = RollingHistogram;
+  measured.Histogram = RDBHistogram;
 
   // replace the constructor on the collection object
   var originalCreateCollection = measured.createCollection;
@@ -18,10 +17,13 @@ module.exports.patchMeasured = function(measured) {
         return this._metrics[name];
       }
 
-      var metric = new RollingHistogram(properties);
+      var metric = new RDBHistogram(properties);
       this.register(name, metric);
       return metric;
     };
     collection.histogram.bind(collection);
+    return collection;
   }
-};
+}
+
+module.exports = patchMeasured;

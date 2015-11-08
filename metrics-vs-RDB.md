@@ -1,3 +1,9 @@
+# Quantifying performance
+
+Quantifying performance is a non trivial statistical problem. The popular measures - mean µ (average) and standard deviation &#963;
+- are effective for normal distribution (gaussian) measuring the middle and width of the distribution. However, performance, latency,
+the amount of time an operation takes, tend to have a different distribution
+
 # RDB vs Metrics histogram
 
 [Node measured](https://github.com/felixge/node-measured) is a port of the java [metrics](https://github.com/dropwizard/metrics) library.

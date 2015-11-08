@@ -1,8 +1,8 @@
 {
   "name": "rdb-histogram",
   "version": "1.0.0",
-  "description": "Rolling Dynamic range Bucket Histogram, for computing high precision histograms with time sensitivity",
-  "main": "src/rdb-histogram.js",
+  "description": "Rolling Dynamic range Bucket Histogram, for computing high precision histograms",
+  "main": "index.js",
   "scripts": {
     "lint": "jshint test/ ",
     "test": "mocha",
