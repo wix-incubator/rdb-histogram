@@ -1,13 +1,8 @@
 # RDBHistogram
 
 RDBHistogram (Rolling Dynamic range Bucket Histogram) is an histogram algorithm that aims for high precision while preserving memory.
-The Histogram is optimized for performance and latency use cases which tend to have distributions with large variance and
-large values tend to be huge compared to the normal values.
-
-For instance, a certain latency figure can have 10µSec minimum and 10µSec median with 10mSec 99%tile, 100mSec 99.9%tile and 1 Sec max
-(in this case this is the latency of waiting on a Java blocking queue when there are available workers).
-
-The RDBHistogram is optimized to measure such distributions and compute statistics to visualize how the distribution varies over time.
+Histograms are a great tool to quantify performance measurements (like latency) which tend to have a non-normal distribution
+with extremely large values.
 
 Statistics captured:
 
@@ -19,21 +14,20 @@ Statistics captured:
 * 99%tile
 * 99.9%tile
 
-With the default configuration, the RDBHistogram tracks 1:00 - 1:15 minutes of history to compute the statistics
-(it uses 4 historic buckets of 15 seconds each plus one current bucket of between 0..15 seconds).
-The default configuration ensures precision of about 10% in the computed percentile values.
+With the default configuration, the RDBHistogram tracks last minute statistics with 10% accuracy. Compared to other algorithms
+(the algorithm used by [Metrics](https://github.com/dropwizard/metrics)), the RDB histogram provides better accuracy, predictability
+and a smaller memory footprint.
 
 ## Why?
 
-Read the comparison with the popular Metrics Histogram algorithm [here](metrics-vs-rdb.md).
+Read the comparison with the popular Metrics Histogram algorithm <link to our blog post>.
 
 ## Usage
-
 
 Create the histogram object
 
 ```
-var RDBHistogram = require('../src/rdb-histogram');
+var RDBHistogram = require('rdb-histogram');
 var histogram = new RDBHistogram();
 ```
 
@@ -48,6 +42,41 @@ Get the statistics
 ```
 histogram.toJSON();
 ```
+
+## patching node-measured
+
+[node-measured](https://github.com/felixge/node-measured) is a node.js implementation of the excellent
+[Metrics](https://github.com/dropwizard/metrics) library. Like the metrics library it has the failing
+of the Metrics histogram algorithm which is based on sampling and suffers from inherent inaccuracy, and
+more importantly, unpredictable inaccuracy - one cannot calculate what the inaccuracy will be given a certain
+input data or rate of input samples simply because the algorithm is preserves a set of samples that is probably to be
+representative but is not guaranteed to be so.
+
+The RDBHistogram provides a higher precision algorithm with a lesser memory footprint and a predicable accuracy - accuracy
+is only a factor of the RDBHistogram configuration.
+
+The RDBHistogram includes a patch function that patches ```node-measured```, replacing it's Histogram algorithm with
+a compatible RDBHistogram. To parch ```node-measured``` use the following:
+
+```
+var measured = require('measured');
+var RDBHistogram = require('rdb-histogram');
+RDBHistogram.patchMeasured(measured);
+```
+
+then one can use ```node-measured``` histogram in a compatible way -
+
+```
+var histogram = new measured.Histogram();
+```
+
+or
+
+```
+var collection = measured.createCollection();
+var histogram = collection.histogram('metric-name');
+```
+
 
 ## Configuration
 
