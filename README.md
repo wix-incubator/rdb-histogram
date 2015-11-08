@@ -9,10 +9,10 @@ Statistics captured:
 * max
 * min
 * median
-* 75%tile
-* 95%tile
-* 99%tile
-* 99.9%tile
+* 75th percentile
+* 95th percentile
+* 99th percentile
+* 99.9th percentile
 
 With the default configuration, the RDBHistogram tracks last minute statistics with 10% accuracy. Compared to other algorithms
 (the algorithm used by [Metrics](https://github.com/dropwizard/metrics)), the RDB histogram provides better accuracy, predictability
@@ -42,6 +42,27 @@ Get the statistics
 ```
 histogram.toJSON();
 ```
+
+The returned json has the form
+
+```
+{
+  min: 182.0700962934643,
+  max: 875.7033819006756,
+  count: 40000,
+  median: 510.0446645318259,
+  p75: 572.0086002136738,
+  p95: 659.6095291048899,
+  p99: 720.9989285909948,
+  p999: 783.4347930209091,
+  numBuckets: 117
+}
+```
+
+Where most values are self explanatory. The ```numBuckets``` field is an indication of the number of buckets used
+internally by the histogram. The memory used by the histogram is 3 numbers for each bucket - in the above example
+117 buckets means 351 numbers are used internally.
+
 
 ## patching node-measured
 
