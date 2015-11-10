@@ -1,0 +1,16 @@
+# NPM
+node_modules
+npm-debug.log*
+
+# IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+*.sc
+
+# OSX
+.DS_Store
+
+# other
+runs
