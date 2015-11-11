@@ -263,6 +263,17 @@ describe("histogram minimal number of events", function () {
     expect(histogram.toJSON().count).to.be.equal(0);
   });
 
+  it("should return empty for no events given the histogram is configured with sub-buckets", function () {
+    var histogram = new DBHistogram({}, [3,4,5]);
+    expect(histogram.toJSON().count).to.be.equal(0);
+  });
+
+  it("should return empty for no events given the it has all empty buckets", function () {
+    var histogram = new DBHistogram();
+    histogram.buckets[4] = {count: 0, min: 0, max: 0};
+    expect(histogram.toJSON().count).to.be.equal(0);
+  });
+
   it("should return all stats equal for one event", function () {
     var histogram = new DBHistogram();
     histogram.update(10);

@@ -171,7 +171,13 @@ function mergeSubBuckets(thisBucket, otherBucket, newBucket) {
 }
 
 DBHistogram.prototype.toJSON = function() {
-  if (this.buckets.length === 0)
+  var samplesCount = this.buckets.map(function(bc) {
+    return bc.count || 0;
+  }).reduce(function(a,b) {
+      return a+b;
+    }, 0);
+
+  if (samplesCount === 0)
     return {
       count: 0
     };
@@ -180,11 +186,11 @@ DBHistogram.prototype.toJSON = function() {
       min: this.min,
       max: this.max,
       count: this.count,
-      median: this.percentile(0.5, this.buckets),
-      p75: this.percentile(0.75, this.buckets),
-      p95: this.percentile(0.95, this.buckets),
-      p99: this.percentile(0.99, this.buckets),
-      p999: this.percentile(0.999, this.buckets),
+      median: this.percentile(0.5, this.buckets, samplesCount),
+      p75: this.percentile(0.75, this.buckets, samplesCount),
+      p95: this.percentile(0.95, this.buckets, samplesCount),
+      p99: this.percentile(0.99, this.buckets, samplesCount),
+      p999: this.percentile(0.999, this.buckets, samplesCount),
       numBuckets: this.numberOfBuckets()
     }
 };
@@ -196,25 +202,20 @@ DBHistogram.prototype.numberOfBuckets = function() {
     else
       return sum + 1
   }, 0)
-}
+};
 
-DBHistogram.prototype.percentile = function(percentile, buckets) {
-  var total = buckets.map(function(bc) {
-    return bc.count || 0;
-  }).reduce(function(a,b) {
-    return a+b;
-  });
+DBHistogram.prototype.percentile = function(percentile, buckets, samplesCount) {
   var currSum = 0;
   var prevSum = 0;
   var pos = 0;
   var currBucket;
 
-  while (currSum/total < percentile && pos < buckets.length) {
+  while (currSum/samplesCount < percentile && pos < buckets.length) {
     prevSum = currSum;
     if (buckets[pos]) {
       if (buckets[pos].subBuckets) {
         var subPos = 0;
-        while (currSum/total < percentile && subPos < buckets[pos].subBuckets.length) {
+        while (currSum/samplesCount < percentile && subPos < buckets[pos].subBuckets.length) {
           prevSum = currSum;
           if (buckets[pos].subBuckets[subPos]) {
             currBucket = buckets[pos].subBuckets[subPos];
@@ -235,7 +236,7 @@ DBHistogram.prototype.percentile = function(percentile, buckets) {
   var value = bucket.count;
   var cellHigh = bucket.max;
   var cellLow = bucket.min;
-  var percentOfCell = (total * percentile - prevSum) / value;
+  var percentOfCell = (samplesCount * percentile - prevSum) / value;
   return percentOfCell * (cellHigh-cellLow) + cellLow;
 };
 
