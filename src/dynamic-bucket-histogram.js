@@ -34,7 +34,7 @@ DBHistogram.prototype.update = function (value) {
   if (value < this.minBucket)
     bucket = 0;
   else {
-    bucket = Math.floor(this.mainScale*(log10(value) - log10(this.minBucket))) + 1;
+    bucket = this.valueToBucket(value);
   }
 
   this.buckets[bucket] = this.buckets[bucket] || {count: 0};
