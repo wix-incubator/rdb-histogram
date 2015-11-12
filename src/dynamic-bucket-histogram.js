@@ -17,10 +17,13 @@ DBHistogram.prototype.normalizedLog = function(value) {
 };
 
 DBHistogram.prototype.valueToBucket = function (value) {
-  return Math.floor(this.mainScale*(log10(value) - log10(this.minValue))) + 1;
+  return Math.max(0, Math.floor(this.mainScale*(log10(value) - log10(this.minValue))) + 1);
 };
 
 DBHistogram.prototype.valueToSubBucket = function (bucketIndex, value) {
+  if (bucketIndex === 0) {
+    return Math.floor(value/this.minValue*this.subScale);
+  }
   var bucketLowerBound = this.minValue*Math.floor((Math.pow(10, (bucketIndex-1)/this.mainScale + log10(this.minValue)))/this.minValue);
   return Math.floor(this.mainScale*(log10(value) - log10(bucketLowerBound))*this.subScale);
 };

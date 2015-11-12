@@ -154,6 +154,22 @@ describe("rolling histogram", function () {
     expect(stats.p999).to.be.undefined;
   });
 
+  it("should work if all values are below the minValue - all should be within bucket 0", function() {
+    MockDate.set("1/1/2000 00:00:00");
+    var histogram = new RDBHistogram({minValue: 1});
+    for (var i=1; i < 50; i++) {
+      histogram.update(((i*13)%100)/100);
+    }
+    MockDate.set("1/1/2000 00:00:20");
+    for (i=50; i < 100; i++) {
+      histogram.update(((i*13)%100)/100);
+    }
+
+    var focusBuckets = histogram.current.focusBuckets;
+    expect(focusBuckets.length).to.be.equal(1);
+    expect(histogram.current.bucketBounds(focusBuckets[0])).to.be.deep.equal([0, 1]);
+  });
+
 });
 
 
@@ -202,11 +218,16 @@ function model4() {
   return value;
 }
 
+function model5() {
+  return normalRand()/10;
+}
+
 
 describe("rolling histogram end 2 end", function () {
 
-  function end2end(model, properties, accuracy) {
-    accuracy = accuracy || 0.05; // default accuracy
+  function end2end(model, properties, accuracyPercent, accuracyFixed) {
+    accuracyPercent = accuracyPercent || 0.05; // default accuracy
+    accuracyFixed = accuracyFixed || 0;
     MockDate.set("1/1/2000 00:00:00");
     var values = [];
     function store(value) {
@@ -251,13 +272,14 @@ describe("rolling histogram end 2 end", function () {
     expect(stats.count).to.be.equal(values.length);
     expect(stats.min).to.be.equal(min);
     expect(stats.max).to.be.equal(max);
-    var lowAcc = 1-accuracy;
-    var highAcc = 1+accuracy;
-    expect(stats.median).to.be.within(median * lowAcc, median * highAcc);
-    expect(stats.p75).to.be.within(p75 * lowAcc, p75 * highAcc);
-    expect(stats.p95).to.be.within(p95 * lowAcc, p95 * highAcc);
-    expect(stats.p99).to.be.within(p99 * lowAcc, p99 * highAcc);
-    expect(stats.p999).to.be.within(p999 * lowAcc, p999 * highAcc);
+    var lowAcc = 1-accuracyPercent;
+    var highAcc = 1+accuracyPercent;
+    var accFixed = accuracyFixed;
+    expect(stats.median).to.be.within(median * lowAcc - accFixed, median * highAcc + accFixed);
+    expect(stats.p75).to.be.within(   p75    * lowAcc - accFixed, p75    * highAcc + accFixed);
+    expect(stats.p95).to.be.within(   p95    * lowAcc - accFixed, p95    * highAcc + accFixed);
+    expect(stats.p99).to.be.within(   p99    * lowAcc - accFixed, p99    * highAcc + accFixed);
+    expect(stats.p999).to.be.within(  p999   * lowAcc - accFixed, p999   * highAcc + accFixed);
   }
 
   // 10% accuracy comes from default config of the histogram of 5 buckets and 5 sub-buckets
@@ -285,6 +307,10 @@ describe("rolling histogram end 2 end", function () {
       mainScale: 10,
       subScale: 10},
     0.0125);
+  });
+
+  it("compute percentiles within 0.2 accuracy (deviding the range 0..minValue=1 to 5 buckets of 0.2) for a gaussian model where all values are below the configured minValue after 1:15 minute", function() {
+    end2end(model5, {minValue: 1}, 0, 0.2);
   });
 });
 
