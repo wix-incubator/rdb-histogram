@@ -7,11 +7,11 @@ var DBHistogram = require('../src/dynamic-bucket-histogram');
 describe("histogram with uniform distribution 0..100", function () {
 
   var histogram = new DBHistogram();
-  for (var i=0; i < 101; i++)
+  for (var i=1; i < 101; i++)
     histogram.update(i);
 
-  it("should compute min 0", function () {
-    expect(histogram.toJSON().min).to.be.equal(0);
+  it("should compute min 1", function () {
+    expect(histogram.toJSON().min).to.be.equal(1);
   });
 
   it("should compute max 100", function () {
@@ -352,7 +352,7 @@ describe("histogram add", function () {
     var h1 = new DBHistogram();
     var h2 = new DBHistogram();
 
-    for (var i=0; i < 100; i++)
+    for (var i=1; i < 100; i++)
       h1.update(i);
 
     for (i=100; i < 200; i++)
@@ -478,26 +478,26 @@ describe("histogram add", function () {
     expect(h3.buckets[8].subBuckets[4]).to.be.deep.equal({count: 4, min: 37, max: 39});
   });
 
-  it("adding 2 histograms with focus buckets", function () {
-    var h1 = new DBHistogram({}, [7,8]);
-    var h2 = new DBHistogram({}, [7,9]);
+  it("adding 2 histograms with focus buckets, using config minValue = 1", function () {
+    var h1 = new DBHistogram({minValue: 1}, [7,8]);
+    var h2 = new DBHistogram({minValue: 1}, [7,9]);
 
-    for (var i=0; i < 100; i++)
+    for (var i=1; i < 100; i++)
       h1.update(i);
 
-    for (i=0; i < 100; i++)
+    for (i=1; i < 100; i++)
       h2.update(i);
 
     // at this point, the histograms have the following buckets
-    // h1: [1, 1, 1, 1, 3, 3, 6,  {10, [1, 2, 1, 2, 2, 2]}, {14, [2, 3, 2, 4, 3]},  24,                         36
-    // h2: [1, 1, 1, 1, 3, 3, 6,  {10, [1, 2, 1, 2, 2, 2]},  14,                   {24, [3, 4,  5,  5,  5, 2]}, 36
+    // h1: [ , 1, 1, 1, 3, 3, 6,  {10, [1, 2, 1, 2, 2, 2]}, {14, [2, 3, 2, 4, 3]},  24,                         36
+    // h2: [ , 1, 1, 1, 3, 3, 6,  {10, [1, 2, 1, 2, 2, 2]},  14,                   {24, [3, 4,  5,  5,  5, 2]}, 36
 
     // after adding, h2 should have
     // h2: [2, 2, 2, 2, 6, 6, 12, {20, [2, 4, 2, 4, 4, 4]}, {28, [4, 6, 4, 8, 6]}, {48, [6, 8, 10, 10, 10, 4]}, 72
 
     var h3 = h2.add(h1);
 
-    expect(h3.buckets[0].count).to.be.equal(2);
+
     expect(h3.buckets[1].count).to.be.equal(2);
     expect(h3.buckets[2].count).to.be.equal(2);
     expect(h3.buckets[3].count).to.be.equal(2);
@@ -528,6 +528,74 @@ describe("histogram add", function () {
     expect(h3.buckets[9].subBuckets[4].count).to.be.equal(10);
     expect(h3.buckets[9].subBuckets[5].count).to.be.equal(4);
     expect(h3.buckets[10].count).to.be.equal(72);
+  });
+
+  it("adding 2 histograms with focus buckets, using default config (minValue = 0.01)", function () {
+    var h1 = new DBHistogram({}, [7,8]);
+    var h2 = new DBHistogram({}, [7,9]);
+
+    for (var i=0.01; i < 1; i = i + 0.01)
+      h1.update(i);
+
+    for (i=0.01; i < 1; i = i + 0.01)
+      h2.update(i);
+
+    // at this point, the histograms have the following buckets
+    // h1: [ , 1, 1, 1, 3, 4, 5,  {10, [1, 2, 1, 2, 2, 2]}, {14, [2, 3, 2, 4, 3]},  24,                         36
+    // h2: [ , 1, 1, 1, 3, 4, 5,  {10, [1, 2, 1, 2, 2, 2]},  14,                   {24, [3, 4,  5,  5,  5, 2]}, 36
+
+    // after adding, h2 should have
+    // h2: [2, 2, 2, 2, 6, 8, 10, {20, [2, 4, 2, 4, 4, 4]}, {28, [4, 6, 4, 8, 6]}, {48, [6, 8, 10, 10, 10, 4]}, 72
+
+    var h3 = h2.add(h1);
+
+
+    expect(h3.buckets[1].count).to.be.equal(2);
+    expect(h3.buckets[2].count).to.be.equal(2);
+    expect(h3.buckets[3].count).to.be.equal(2);
+    expect(h3.buckets[4].count).to.be.equal(6);
+    expect(h3.buckets[5].count).to.be.equal(8);
+    expect(h3.buckets[6].count).to.be.equal(10);
+    expect(h3.buckets[7].count).to.be.equal(20);
+    expect(h3.buckets[7].subBuckets.length).to.be.equal(6);
+    expect(h3.buckets[7].subBuckets[0].count).to.be.equal(2);
+    expect(h3.buckets[7].subBuckets[1].count).to.be.equal(4);
+    expect(h3.buckets[7].subBuckets[2].count).to.be.equal(2);
+    expect(h3.buckets[7].subBuckets[3].count).to.be.equal(4);
+    expect(h3.buckets[7].subBuckets[4].count).to.be.equal(4);
+    expect(h3.buckets[7].subBuckets[5].count).to.be.equal(4);
+    expect(h3.buckets[8].count).to.be.equal(28);
+    expect(h3.buckets[8].subBuckets.length).to.be.equal(5);
+    expect(h3.buckets[8].subBuckets[0].count).to.be.equal(4);
+    expect(h3.buckets[8].subBuckets[1].count).to.be.equal(6);
+    expect(h3.buckets[8].subBuckets[2].count).to.be.equal(4);
+    expect(h3.buckets[8].subBuckets[3].count).to.be.equal(8);
+    expect(h3.buckets[8].subBuckets[4].count).to.be.equal(6);
+    expect(h3.buckets[9].count).to.be.equal(48);
+    expect(h3.buckets[9].subBuckets.length).to.be.equal(6);
+    expect(h3.buckets[9].subBuckets[0].count).to.be.equal(6);
+    expect(h3.buckets[9].subBuckets[1].count).to.be.equal(8);
+    expect(h3.buckets[9].subBuckets[2].count).to.be.equal(10);
+    expect(h3.buckets[9].subBuckets[3].count).to.be.equal(10);
+    expect(h3.buckets[9].subBuckets[4].count).to.be.equal(10);
+    expect(h3.buckets[9].subBuckets[5].count).to.be.equal(4);
+    expect(h3.buckets[10].count).to.be.equal(72);
+  });
+
+  it("should reject adding two histograms with different config", function() {
+    var h1 = new DBHistogram({minValue:1});
+    var h2 = new DBHistogram();
+    var h3 = new DBHistogram({mainScale: 7});
+    var h4 = new DBHistogram({mainScale: 7, subScale: 6});
+
+    expect(function h12() {return h1.add(h2);})
+      .to.throw(Error, 'DBHistogram.add: incompatible histogram configs ({minValue: 1, mainScale: 5, subScale: 5} and {minValue: 0.01, mainScale: 5, subScale: 5})');
+    expect(function h13() {return h1.add(h3);})
+      .to.throw(Error, 'DBHistogram.add: incompatible histogram configs ({minValue: 1, mainScale: 5, subScale: 5} and {minValue: 0.01, mainScale: 7, subScale: 5})');
+    expect(function h23() {return h2.add(h3);})
+      .to.throw(Error, 'DBHistogram.add: incompatible histogram configs ({minValue: 0.01, mainScale: 5, subScale: 5} and {minValue: 0.01, mainScale: 7, subScale: 5})');
+    expect(function h34() {return h3.add(h4);})
+      .to.throw(Error, 'DBHistogram.add: incompatible histogram configs ({minValue: 0.01, mainScale: 7, subScale: 5} and {minValue: 0.01, mainScale: 7, subScale: 6})');
   });
 });
 

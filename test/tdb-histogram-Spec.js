@@ -13,11 +13,11 @@ describe("rolling histogram", function () {
 
   it("should work as a regular histogram in a short timeframe", function() {
     var histogram = new RDBHistogram();
-    for (var i=0; i < 101; i++)
+    for (var i=1; i < 101; i++)
       histogram.update(i);
     var stats = histogram.toJSON();
-    expect(stats.count).to.be.equal(101);
-    expect(stats.min).to.be.equal(0);
+    expect(stats.count).to.be.equal(100);
+    expect(stats.min).to.be.equal(1);
     expect(stats.max).to.be.equal(100);
     expect(stats.median).to.be.within(49, 51);
     expect(stats.p75).to.be.within(74, 76);
@@ -29,14 +29,14 @@ describe("rolling histogram", function () {
   it("should retain all measurements within 1 minute", function() {
     MockDate.set("1/1/2000 00:00:00");
     var histogram = new RDBHistogram();
-    for (var i=0; i < 101; i++)
+    for (var i=1; i < 101; i++)
       histogram.update(i);
 
     MockDate.set("1/1/2000 00:01:00");
 
     var stats = histogram.toJSON();
-    expect(stats.count).to.be.equal(101);
-    expect(stats.min).to.be.equal(0);
+    expect(stats.count).to.be.equal(100);
+    expect(stats.min).to.be.equal(1);
     expect(stats.max).to.be.equal(100);
     expect(stats.median).to.be.within(49, 51);
     expect(stats.p75).to.be.within(74, 76);
@@ -45,10 +45,10 @@ describe("rolling histogram", function () {
     expect(stats.p999).to.be.within(99, 100);
   });
 
-  it("should consider all data points in 1 minute history as the same given uniform behavior", function() {
+  it("should consider all data points in 1 minute history as the same given uniform behavior, with default config (minValue = 1)", function() {
     MockDate.set("1/1/2000 00:00:00");
     var histogram = new RDBHistogram();
-    for (var i=0; i < 100; i++) {
+    for (var i=1; i < 100; i++) {
       if (i < 25)
         MockDate.set("1/1/2000 00:00:05");
       else if (i < 50)
@@ -65,9 +65,9 @@ describe("rolling histogram", function () {
 
     var stats = histogram.toJSON();
 
-    expect(stats.count).to.be.equal(100);
-    expect(stats.numBuckets).to.be.equal(61);
-    expect(stats.min).to.be.equal(0);
+    expect(stats.count).to.be.equal(99);
+    expect(stats.numBuckets).to.be.equal(60);
+    expect(stats.min).to.be.equal(1);
     expect(stats.max).to.be.equal(99);
     expect(stats.median).to.be.within(49, 51);
     expect(stats.p75).to.be.within(73, 77);
@@ -76,10 +76,41 @@ describe("rolling histogram", function () {
     expect(stats.p999).to.be.within(97, 99);
   });
 
-  it("should focus on the percentiles after 15 seconds", function() {
+  it("should consider all data points in 1 minute history as the same given uniform behavior - with config minValue = 1", function() {
     MockDate.set("1/1/2000 00:00:00");
-    var histogram = new RDBHistogram();
-    for (var i=0; i < 100; i++) {
+    var histogram = new RDBHistogram({minValue: 1});
+    for (var i=1; i < 100; i++) {
+      if (i < 25)
+        MockDate.set("1/1/2000 00:00:05");
+      else if (i < 50)
+        MockDate.set("1/1/2000 00:00:20");
+      else if (i < 75)
+        MockDate.set("1/1/2000 00:00:35");
+      else
+        MockDate.set("1/1/2000 00:00:50");
+      // the *13 % 100 is required to make sure the distribution is uniform and consistent across the 1 minute
+      histogram.update((i*13)%100);
+    }
+
+    MockDate.set("1/1/2000 00:01:00");
+
+    var stats = histogram.toJSON();
+
+    expect(stats.count).to.be.equal(99);
+    expect(stats.numBuckets).to.be.equal(60);
+    expect(stats.min).to.be.equal(1);
+    expect(stats.max).to.be.equal(99);
+    expect(stats.median).to.be.within(49, 51);
+    expect(stats.p75).to.be.within(73, 77);
+    expect(stats.p95).to.be.within(93, 97);
+    expect(stats.p99).to.be.within(97, 99);
+    expect(stats.p999).to.be.within(97, 99);
+  });
+
+  it("should focus on the percentiles after 15 seconds, with config minValue = 1", function() {
+    MockDate.set("1/1/2000 00:00:00");
+    var histogram = new RDBHistogram({minValue: 1});
+    for (var i=1; i < 100; i++) {
       histogram.update((i*13)%100);
     }
     MockDate.set("1/1/2000 00:00:20");
@@ -90,10 +121,24 @@ describe("rolling histogram", function () {
     expect(histogram.current.bucketBounds(focusBuckets[1])).to.be.deep.equal([63, 100]);
   });
 
+  it("should focus on the percentiles after 15 seconds, with default config (minValue = 0.01)", function() {
+    MockDate.set("1/1/2000 00:00:00");
+    var histogram = new RDBHistogram();
+    for (var i=1; i < 100; i++) {
+      histogram.update((i*13)%100);
+    }
+    MockDate.set("1/1/2000 00:00:20");
+    histogram.update(50);
+
+    var focusBuckets = histogram.current.focusBuckets;
+    expect(histogram.current.bucketBounds(focusBuckets[0])).to.be.deep.equal([3981, 6309]);
+    expect(histogram.current.bucketBounds(focusBuckets[1])).to.be.deep.equal([6309, 10000]);
+  });
+
   it("should clear all measurements within 1 minute and 15 seconds", function() {
     MockDate.set("1/1/2000 00:00:00");
     var histogram = new RDBHistogram();
-    for (var i=0; i < 101; i++)
+    for (var i=1; i < 101; i++)
       histogram.update(i);
 
     MockDate.set("1/1/2000 00:01:16");
@@ -110,6 +155,7 @@ describe("rolling histogram", function () {
   });
 
 });
+
 
 function normalRand() {
   // making a gaussian distribution from the linear distribution

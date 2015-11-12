@@ -1,8 +1,8 @@
-
+var util = require('util');
 
 function DBHistogram(properties, focusBuckets) {
   properties = properties || {};
-  this.minBucket = properties.minBucket || 1;
+  this.minValue = properties.minValue || 0.01;
   this.mainScale = properties.mainScale || 5;
   this.subScale = properties.subScale || 5;
   this.focusBuckets = focusBuckets || [];
@@ -17,11 +17,11 @@ DBHistogram.prototype.normalizedLog = function(value) {
 };
 
 DBHistogram.prototype.valueToBucket = function (value) {
-  return Math.floor(this.mainScale*(log10(value) - log10(this.minBucket))) + 1;
+  return Math.floor(this.mainScale*(log10(value) - log10(this.minValue))) + 1;
 };
 
 DBHistogram.prototype.valueToSubBucket = function (bucketIndex, value) {
-  var bucketLowerBound = Math.floor(Math.pow(10, (bucketIndex-1)/this.mainScale));
+  var bucketLowerBound = this.minValue*Math.floor((Math.pow(10, (bucketIndex-1)/this.mainScale + log10(this.minValue)))/this.minValue);
   return Math.floor(this.mainScale*(log10(value) - log10(bucketLowerBound))*this.subScale);
 };
 
@@ -31,11 +31,13 @@ DBHistogram.prototype.bucketBounds = function (bucketIndex) {
 
 DBHistogram.prototype.update = function (value) {
   var bucket;
-  if (value < this.minBucket)
-    bucket = 0;
-  else {
+  if (value <= 0)
+    throw new Error("DBHistogram.update suports only positive numbers but got ["+value+"]");
+//  if (value < this.minValue)
+//    bucket = 0;
+//  else {
     bucket = this.valueToBucket(value);
-  }
+//  }
 
   this.buckets[bucket] = this.buckets[bucket] || {count: 0};
   this.buckets[bucket].count += 1;
@@ -58,11 +60,12 @@ DBHistogram.prototype.update = function (value) {
 
 DBHistogram.prototype.add = function(other) {
 
-  if (this.mainScale !== other.mainScale || this.subScale !== other.subScale || this.minBucket !== other.minBucket)
-    throw new Error("DBHistogram.add: incompatible histogram configs");
+  if (this.mainScale !== other.mainScale || this.subScale !== other.subScale || this.minValue !== other.minValue)
+    throw new Error(util.format("DBHistogram.add: incompatible histogram configs ({minValue: %s, mainScale: %s, subScale: %s} and {minValue: %s, mainScale: %s, subScale: %s})",
+      this.minValue, this.mainScale, this.subScale, other.minValue, other.mainScale, other.subScale));
 
   var result = new DBHistogram({
-    minBucket: this.minBucket,
+    minValue: this.minValue,
     mainScale: this.mainScale,
     subScale: this.subScale
   });

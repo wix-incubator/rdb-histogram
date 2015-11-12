@@ -6,7 +6,8 @@
   "scripts": {
     "lint": "jshint test/ ",
     "test": "mocha",
-    "pretest": "npm run lint -s"
+    "pretest": "npm run lint -s",
+    "watch": "watch 'npm test' test src"
   },
   "keywords": [
     "node",
@@ -20,7 +21,8 @@
     "chai": "^3.2.0",
     "jshint": "^2.8.0",
     "mocha": "^2.2.5",
-    "mockdate": "~1.0.3"
+    "mockdate": "~1.0.3",
+    "watch": "^0.16.0"
   },
   "dependencies": {
     "measured": "^1.0.1"
