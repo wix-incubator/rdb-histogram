@@ -105,7 +105,7 @@ The histogram accepts a single configuration object with the following propertie
 
 * historyInterval - The length in mSec of a single time bucket. Defaults to 15000 - 15 seconds.
 * historyLength - The number of time buckets to use. Defaults to 4 time buckets.
-* minBucket - The minimal value, that anything under this value is considered as part of a single minimum bucket. Defaults to 1.
+* minValue - The minimal value, that anything under this value is considered as part of a single minimum bucket. Defaults to 1.
 * mainScale - The number of buckets used between each scale (1..10). The default value of 5 ensures 40% (10^(1/5)) accuracy (before considering subScale).
 * subScale - The number of sub-buckets used to breakdown an interesting bucket (a bucket that has one of the percentiles in the output statistics).
     The default value of 5 ensures accuracy of about 10% (10^(1/25)).
