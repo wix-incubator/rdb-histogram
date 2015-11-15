@@ -1,6 +1,6 @@
 {
   "name": "rdb-histogram",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Rolling Dynamic range Bucket Histogram, for computing high precision histograms",
   "main": "index.js",
   "scripts": {
